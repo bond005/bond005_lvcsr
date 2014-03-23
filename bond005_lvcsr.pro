@@ -5,3 +5,6 @@ CONFIG -= qt
 
 SOURCES += main.c
 
+HEADERS += \
+    bond005_lvcsr_lib.h
+
