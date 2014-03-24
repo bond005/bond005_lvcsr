@@ -32,7 +32,7 @@ typedef struct {
                      * 2 - word node (final node). */
     int number_of_next_nodes;        /**< Number of next nodes. */
     TVocabularyTreeNode *next_nodes; /**< Array of pointers to next nodes. */
-} TDVocabularyTreeNode;
+} TVocabularyTreeNode;
 
 /*! \typedef PVocabularyTreeNode
  * \brief Pointer to TVocabularyTreeNode data.
@@ -61,6 +61,15 @@ typedef struct {
  * \sa TTranscriptionNode
  */
 typedef TTranscriptionNode* PTranscriptionNode;
+
+/*! \struct TWordBigram
+ * \brief Structure for representation of one words bigram.
+ */
+typedef struct {
+    int first_word;   /**< Index of first word in bigram. */
+    int second_word;  /**< Index of second word in bigram. */
+    float probability;/**< Probability of bigram. */
+} TWordBigram;
 
 /*! \fn load_phones_transcriptions(char *mlf_name, char **phones_vocabulary,
  *                                 PTranscriptionNode *transcriptions_of_files,
@@ -185,14 +194,45 @@ int load_phones_vocabulary(char *file_name, char **phones_vocabulary,
  * written. Memory for this string array must be allocated before call of this
  * function. If this array is NULL then it will be ignored.
  *
+ * \param words_number Maximum number of words which can be loaded.
+ *
  * \return This function returns number of words in case of successful loading,
  * and it returns zero in case of loading error.
  */
 int load_words_vocabulary(char *file_name, char **words_vocabulary,
                           int words_number);
 
+/*! \fn int load_words_bigrams(
+ *         char *file_name, char **words_vocabulary, int words_number,
+ *         TWordBigram bigrams[], int bigrams_number)
+ *
+ * \brief This function loads a bigrams list from the given text file into
+ * the TWordBigram array.
+ *
+ * \param file_name The name of text file with bigrams list. Each line of this
+ * file describes one bigram in the following way: name of first word, name of
+ * second word and bigram probability by way of spaces.
+ *
+ * \param words_vocabulary The string array which represented words vocabulary.
+ *
+ * \param words_number The size of words vocabulary.
+ *
+ * \param bigrams TWordBigram array in which the loaded bigrams list will be
+ * written. Memory for this array must be allocated before call of this
+ * function. If this array is NULL then it will be ignored.
+ *
+ * \param bigrams_number Maximum number of bigrams which can be loaded.
+ *
+ * \return This function returns number of bigrams in case of successful
+ * loading, and it returns zero in case of loading error.
+ */
+int load_words_bigrams(char *file_name, char **words_vocabulary,
+                       int words_number, TWordBigram bigrams[],
+                       int bigrams_number);
+
 /*! \fn int create_words_vocabulary_tree(
- *         char *file_name, char **phones_vocabulary, char **words_vocabulary,
+ *         char *file_name, char **phones_vocabulary, int phones_number,
+ *         char **words_vocabulary, int words_number,
  *         PVocabularyTreeNode* root_node)
  *
  * \brief This function loads information about words and their transcriptions
@@ -213,7 +253,8 @@ int load_words_vocabulary(char *file_name, char **words_vocabulary,
  * NULL in case of error.
  */
 PVocabularyTreeNode create_words_vocabulary_tree(
-        char *file_name, char **phones_vocabulary, char **words_vocabulary);
+        char *file_name, char **phones_vocabulary, int phones_number,
+        char **words_vocabulary, int words_number);
 
 /*! \fn void free_vocabulary_tree(PVocabularyTreeNode* root_node)
  *
@@ -232,5 +273,51 @@ void free_vocabulary_tree(PVocabularyTreeNode* root_node);
  * \param Size of string array which is represented the deletable vocabulary.
  */
 void free_vocabulary(char ***vocabulary, int vocabulary_size);
+
+/*! \fn int recognize_words(
+ *         PTranscriptionNode source_phones_transcription,
+ *         char *phones_vocabulary[], int phones_number,
+ *         char *words_vocabulary[], int words_number,
+ *         PVocabularyTreeNode words_tree,
+ *         TWordBigram bigrams[], int bigrams_number,
+ *         PTranscriptionNode *recognized_words)
+ *
+ * \brief This function recognizes all words in the source phones sequence
+ * using vocabularies of phones and words, the bigrams list and the words tree.
+ *
+ * \param source_phones_transcription The source phones transcription which will
+ * be recognized. As result of this recognition the words transcription will be
+ * generated.
+ *
+ * \param phones_vocabulary The string array which represented phones vocabulary.
+ *
+ * \param phones_number The size of phones vocabulary.
+ *
+ * \param words_vocabulary The string array which represented words vocabulary.
+ *
+ * \param words_number The size of words vocabulary.
+ *
+ * \param words_tree The root of words tree which describes standard phonetic
+ * transcriptions of all words.
+ *
+ * \param bigrams The TWordBigram array which represented bigram model of
+ * language.
+ *
+ * \param bigrams_number The number of bigrams.
+ *
+ * \param recognized_words The pointer to words transcription which will be
+ * created as result of recognition. The memory for this words transcription
+ * will be allocated automatically in this function.
+ *
+ * \return This function returns size of recognized words transcription in case
+ * of successful recognizing, or it returns -1 in case of error.
+ */
+int recognize_words(
+        PTranscriptionNode source_phones_transcription,
+        char *phones_vocabulary[], int phones_number,
+        char *words_vocabulary[], int words_number,
+        PVocabularyTreeNode words_tree,
+        TWordBigram bigrams[], int bigrams_number,
+        PTranscriptionNode *recognized_words);
 
 #endif // BOND005_LVCSR_LIB_H
