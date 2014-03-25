@@ -24,21 +24,21 @@
 #ifndef BOND005_LVCSR_LIB_H
 #define BOND005_LVCSR_LIB_H
 
-/*! \struct TVocabularyTreeNode
+/*! \struct TWordsTreeNode
  * \brief Structure for representation of a words tree node. */
-typedef struct {
+typedef struct _TWordsTreeNode {
     int node_data; /**< Data of node: index of word of phone. */
     int node_type; /**< Type of node: 0 - initial node, 1 - phone node,
                      * 2 - word node (final node). */
-    int number_of_next_nodes;        /**< Number of next nodes. */
-    TVocabularyTreeNode *next_nodes; /**< Array of pointers to next nodes. */
-} TVocabularyTreeNode;
+    int number_of_next_nodes;          /**< Number of next nodes. */
+    struct _TWordsTreeNode *next_nodes;/**< Array of pointers to next nodes. */
+} TWordsTreeNode;
 
-/*! \typedef PVocabularyTreeNode
- * \brief Pointer to TVocabularyTreeNode data.
- * \sa TVocabularyTreeNode
+/*! \typedef PWordsTreeNode
+ * \brief Pointer to TWordsTreeNode data.
+ * \sa TWordsTreeNode
  */
-typedef TVocabularyTreeNode* PVocabularyTreeNode;
+typedef TWordsTreeNode* PWordsTreeNode;
 
 /*! \struct TTranscriptionNode
  * \brief Structure for representation of one transcription node.
@@ -170,17 +170,14 @@ int save_words_transcriptions(char *mlf_name, char **words_vocabulary,
  * \param file_name The name of text file with phones vocabulary which will be
  * loaded.
  *
- * \param phones_vocabulary String array in which the phones vocabulary will be
- * written. Memory for this string array must be allocated before call of this
- * function. If this array is NULL then it will be ignored.
- *
- * \param phones_number Maximum number of phones which can be loaded.
+ * \param phones_vocabulary Pointer to string array in which the phones
+ * vocabulary will be written. Memory for this string array will be allocated
+ * automatically in this function.
  *
  * \return This function returns number of phones in case of successful
  * loading, and it returns zero in case of loading error.
  */
-int load_phones_vocabulary(char *file_name, char **phones_vocabulary,
-                           int phones_number);
+int load_phones_vocabulary(char *file_name, char ***phones_vocabulary);
 
 /*! \fn int load_words_vocabulary(char *file_name, char ***words_vocabulary)
  *
@@ -190,17 +187,14 @@ int load_phones_vocabulary(char *file_name, char **phones_vocabulary,
  * \param file_name The name of text file with words vocabulary which will be
  * loaded (this file describes vocabulary words and their transcriptions).
  *
- * \param words_vocabulary String array in which the words vocabulary will be
- * written. Memory for this string array must be allocated before call of this
- * function. If this array is NULL then it will be ignored.
- *
- * \param words_number Maximum number of words which can be loaded.
+ * \param words_vocabulary Pointer to string array in which the words
+ * vocabulary will be written. Memory for this string array will be allocated
+ * automatically in this function.
  *
  * \return This function returns number of words in case of successful loading,
  * and it returns zero in case of loading error.
  */
-int load_words_vocabulary(char *file_name, char **words_vocabulary,
-                          int words_number);
+int load_words_vocabulary(char *file_name, char ***words_vocabulary);
 
 /*! \fn int load_words_bigrams(
  *         char *file_name, char **words_vocabulary, int words_number,
@@ -233,7 +227,7 @@ int load_words_bigrams(char *file_name, char **words_vocabulary,
 /*! \fn int create_words_vocabulary_tree(
  *         char *file_name, char **phones_vocabulary, int phones_number,
  *         char **words_vocabulary, int words_number,
- *         PVocabularyTreeNode* root_node)
+ *         PWordsTreeNode* root_node)
  *
  * \brief This function loads information about words and their transcriptions
  * from the given text file and creates a new words tree on basis on this
@@ -249,20 +243,20 @@ int load_words_bigrams(char *file_name, char **words_vocabulary,
  * words.
  *
  * \return This function returns root of created words tree (pointer to the
- * TVocabularyTreeNode structure) in case of successful creating, or it returns
+ * TWordsTreeNode structure) in case of successful creating, or it returns
  * NULL in case of error.
  */
-PVocabularyTreeNode create_words_vocabulary_tree(
+PWordsTreeNode create_words_vocabulary_tree(
         char *file_name, char **phones_vocabulary, int phones_number,
         char **words_vocabulary, int words_number);
 
-/*! \fn void free_vocabulary_tree(PVocabularyTreeNode* root_node)
+/*! \fn void free_vocabulary_tree(PWordsTreeNode* root_node)
  *
  * \brief Free memory which was allocated for the given words tree.
  *
  * \param Pointer to root of the deletable words tree.
  */
-void free_vocabulary_tree(PVocabularyTreeNode* root_node);
+void free_vocabulary_tree(PWordsTreeNode* root_node);
 
 /*! \fn void free_vocabulary(char ***vocabulary, int vocabulary_size)
  *
@@ -278,8 +272,7 @@ void free_vocabulary(char ***vocabulary, int vocabulary_size);
  *         PTranscriptionNode source_phones_transcription,
  *         char *phones_vocabulary[], int phones_number,
  *         char *words_vocabulary[], int words_number,
- *         PVocabularyTreeNode words_tree,
- *         TWordBigram bigrams[], int bigrams_number,
+ *         PWordsTreeNode words_tree, TWordBigram bigrams[],int bigrams_number,
  *         PTranscriptionNode *recognized_words)
  *
  * \brief This function recognizes all words in the source phones sequence
@@ -316,8 +309,7 @@ int recognize_words(
         PTranscriptionNode source_phones_transcription,
         char *phones_vocabulary[], int phones_number,
         char *words_vocabulary[], int words_number,
-        PVocabularyTreeNode words_tree,
-        TWordBigram bigrams[], int bigrams_number,
+        PWordsTreeNode words_tree, TWordBigram bigrams[], int bigrams_number,
         PTranscriptionNode *recognized_words);
 
 #endif // BOND005_LVCSR_LIB_H
