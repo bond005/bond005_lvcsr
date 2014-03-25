@@ -24,6 +24,19 @@
 #ifndef BOND005_LVCSR_LIB_H
 #define BOND005_LVCSR_LIB_H
 
+#include <stdlib.h>
+
+/*! \def BUFFER_SIZE
+ * \brief This macro defines maximal size of string buffer which is used at
+ * reading of text files.
+ */
+#define BUFFER_SIZE 1001
+
+/*! \def MLF_HEADER
+ * \brief This macro defines header string of each MLF file.
+ */
+#define MLF_HEADER "#!MLF!#"
+
 /*! \struct TWordsTreeNode
  * \brief Structure for representation of a words tree node. */
 typedef struct _TWordsTreeNode {
@@ -42,6 +55,7 @@ typedef TWordsTreeNode* PWordsTreeNode;
 
 /*! \struct TTranscriptionNode
  * \brief Structure for representation of one transcription node.
+ *
  * The transcription node describes some acoustic event associated with
  * appearance of word or phone in speech. This description involves:
  * - name of acoustic event;
@@ -62,6 +76,15 @@ typedef struct {
  */
 typedef TTranscriptionNode* PTranscriptionNode;
 
+/*! \struct TMLFFileNode
+ * \brief Structure for representation of
+ */
+typedef struct {
+    char *name;
+    PTranscriptionNode transcription;
+    int transcription_size;
+} TMLFFileNode;
+
 /*! \struct TWordBigram
  * \brief Structure for representation of one words bigram.
  */
@@ -71,9 +94,10 @@ typedef struct {
     float probability;/**< Probability of bigram. */
 } TWordBigram;
 
-/*! \fn load_phones_transcriptions(char *mlf_name, char **phones_vocabulary,
- *                                 PTranscriptionNode *transcriptions_of_files,
- *                                 char **names_of_files, int files_number);
+/*! \fn int load_phones_transcriptions(
+ *         char *mlf_name, char **phones_vocabulary, int phones_number,
+ *         PTranscriptionNode **transcriptions_of_files,
+ *         char ***names_of_files);
  *
  * \brief This function loads list of phones transcriptions and names of their
  * files from the given MLF file. This MLF file must contain not only labels of
@@ -83,29 +107,31 @@ typedef struct {
  *
  * \param mlf_name The name of source MLF file.
  *
- * \param transcriptions_of_files The array of transcriptions into which phones
- * transcriptions will be written. Memory for this array must be allocated
- * before call of this function. If this array is NULL then it will be ignored.
+ * \param phones_vocabulary The string array which represents phones vocabulary.
  *
- * \param names_of_files The string array into which names of transcriptions
- * files will be written. Memory for this array must be allocated before call
- * of this function. If this array is NULL then it will be ignored.
+ * \param phones_number The size of phones vocabulary.
  *
- * \param files_number The maximum number of phones transcriptions and
- * corresponding files names which can be loaded from MLF file.
+ * \param transcriptions_of_files Pointer to the array of transcriptions into
+ * which phones transcriptions will be written. Memory for this array will be
+ * allocated automatically in this function.
+ *
+ * \param names_of_files Pointer to the string array into which names of
+ * transcriptions files will be written. Memory for this array will be
+ * allocated automatically in this function.
  *
  * \return If the loading has been completed successfully then this function
  * will return number of loaded phones transcriptions and corresponding files
  * names, else this function will return zero.
  */
-int load_phones_transcriptions(char *mlf_name, char **phones_vocabulary,
-                               PTranscriptionNode *transcriptions_of_files,
-                               char **names_of_files, int files_number);
+int load_phones_transcriptions(char *mlf_name,
+                               char **phones_vocabulary, int phones_number,
+                               PTranscriptionNode **transcriptions_of_files,
+                               char ***names_of_files);
 
 /*! \fn int load_words_transcriptions(
- *         char *mlf_name, char **words_vocabulary,
- *         PTranscriptionNode *transcriptions_of_files, char **names_of_files,
- *         int files_number);
+ *         char *mlf_name, char **words_vocabulary, int words_number,
+ *         PTranscriptionNode **transcriptions_of_files,
+ *         char ***names_of_files);
  *
  * \brief This function loads list of words transcriptions and names of their
  * files from the given MLF file. This MLF file must contain only labels of
@@ -113,27 +139,29 @@ int load_phones_transcriptions(char *mlf_name, char **phones_vocabulary,
  *
  * \param mlf_name The name of source MLF file.
  *
- * \param transcriptions_of_files The array of transcriptions into which words
- * transcriptions will be written. Memory for this array must be allocated
- * before call of this function. If this array is NULL then it will be ignored.
+ * \param words_vocabulary The string array which represents words vocabulary.
  *
- * \param names_of_files The string array into which names of transcriptions
- * files will be written. Memory for this array must be allocated before call
- * of this function. If this array is NULL then it will be ignored.
+ * \param words_number The size of words vocabulary.
  *
- * \param files_number The maximum number of words transcriptions and
- * corresponding files names which can be loaded from MLF file.
+ * \param transcriptions_of_files Pointer to the array of transcriptions into
+ * which words transcriptions will be written. Memory for this array will be
+ * allocated automatically in this function.
  *
- * \return If the loading has been completed successfully then this functiont
+ * \param names_of_files Pointer to the string array into which names of
+ * transcriptions files will be written. Memory for this array will be
+ * allocated automatically in this function.
+ *
+ * \return If the loading has been completed successfully then this function
  * will return number of loaded words transcriptions and corresponding files
  * names, else this function will return zero.
  */
-int load_words_transcriptions(char *mlf_name, char **words_vocabulary,
-                              PTranscriptionNode *transcriptions_of_files,
-                              char **names_of_files, int files_number);
+int load_words_transcriptions(char *mlf_name,
+                              char **words_vocabulary, int words_number,
+                              PTranscriptionNode **transcriptions_of_files,
+                              char ***names_of_files);
 
 /*! \fn int save_words_transcriptions(
- *         char *mlf_name, char **words_vocabulary,
+ *         char *mlf_name, char **words_vocabulary, int words_number,
  *         PTranscriptionNode *transcriptions_of_files,
  *         char **names_of_files, int files_number)
  *
@@ -144,6 +172,10 @@ int load_words_transcriptions(char *mlf_name, char **words_vocabulary,
  *
  * \param mlf_name The name of MLF file into which list of words transcriptions
  * must be written.
+ *
+ * \param words_vocabulary The string array which represents words vocabulary.
+ *
+ * \param words_number The size of words vocabulary.
  *
  * \param transcriptions_of_files The array of words transcriptions which will
  * be saved.
@@ -158,14 +190,16 @@ int load_words_transcriptions(char *mlf_name, char **words_vocabulary,
  * will return number of saved words transcriptions and corresponding files
  * names, else this function will return zero.
  */
-int save_words_transcriptions(char *mlf_name, char **words_vocabulary,
+int save_words_transcriptions(char *mlf_name,
+                              char **words_vocabulary, int words_number,
                               PTranscriptionNode *transcriptions_of_files,
                               char **names_of_files, int files_number);
 
 /*! \fn int load_phones_vocabulary(char *file_name, char ***phones_vocabulary)
  *
  * \brief This function loads phones vocabulary (i.e. list of phones) from the
- * given text file into the string array.
+ * given text file into the string array. The phones vocabulary is being sorted
+ * automatically at loading.
  *
  * \param file_name The name of text file with phones vocabulary which will be
  * loaded.
@@ -182,7 +216,8 @@ int load_phones_vocabulary(char *file_name, char ***phones_vocabulary);
 /*! \fn int load_words_vocabulary(char *file_name, char ***words_vocabulary)
  *
  * \brief This function loads words vocabulary (i.e. list of words) from the
- * given text file into the string array.
+ * given text file into the string array. The words vocabulary is being sorted
+ * automatically at loading.
  *
  * \param file_name The name of text file with words vocabulary which will be
  * loaded (this file describes vocabulary words and their transcriptions).
@@ -201,28 +236,26 @@ int load_words_vocabulary(char *file_name, char ***words_vocabulary);
  *         TWordBigram bigrams[], int bigrams_number)
  *
  * \brief This function loads a bigrams list from the given text file into
- * the TWordBigram array.
+ * the TWordBigram array. The bigrams list is being sorted automatically at
+ * loading.
  *
  * \param file_name The name of text file with bigrams list. Each line of this
  * file describes one bigram in the following way: name of first word, name of
  * second word and bigram probability by way of spaces.
  *
- * \param words_vocabulary The string array which represented words vocabulary.
+ * \param words_vocabulary The string array which represents words vocabulary.
  *
  * \param words_number The size of words vocabulary.
  *
- * \param bigrams TWordBigram array in which the loaded bigrams list will be
- * written. Memory for this array must be allocated before call of this
- * function. If this array is NULL then it will be ignored.
- *
- * \param bigrams_number Maximum number of bigrams which can be loaded.
+ * \param bigrams Pointer to TWordBigram array in which the loaded bigrams list
+ * will be written. Memory for this array will be allocated automatically in
+ * this function.
  *
  * \return This function returns number of bigrams in case of successful
  * loading, and it returns zero in case of loading error.
  */
 int load_words_bigrams(char *file_name, char **words_vocabulary,
-                       int words_number, TWordBigram bigrams[],
-                       int bigrams_number);
+                       int words_number, TWordBigram *bigrams[]);
 
 /*! \fn int create_words_vocabulary_tree(
  *         char *file_name, char **phones_vocabulary, int phones_number,
@@ -236,11 +269,15 @@ int load_words_bigrams(char *file_name, char **words_vocabulary,
  * \param file_name The name of text file with words vocabulary which will be
  * loaded (this file describes vocabulary words and their transcriptions).
  *
- * \param phones_vocabulary String array which contains names of recognized
- * phones.
+ * \param phones_vocabulary The sorted string array which contains names of
+ * recognized phones.
  *
- * \param words_vocabulary String array which contains names of recognized
- * words.
+ * \param phones_number The size of phones vocabulary.
+ *
+ * \param words_vocabulary The sorted string array which contains names of
+ * recognized words.
+ *
+ * \param words_number The size of words vocabulary.
  *
  * \return This function returns root of created words tree (pointer to the
  * TWordsTreeNode structure) in case of successful creating, or it returns
@@ -258,15 +295,16 @@ PWordsTreeNode create_words_vocabulary_tree(
  */
 void free_vocabulary_tree(PWordsTreeNode* root_node);
 
-/*! \fn void free_vocabulary(char ***vocabulary, int vocabulary_size)
+/*! \fn void free_string_array(char ***string_array, int array_size)
  *
- * \brief Free memory which was allocated for the given vocabulary.
+ * \brief This function frees memory which was allocated for the given string
+ * array.
  *
- * \param Pointer to string array which is represented the deletable vocabulary.
+ * \param string_array Pointer to the deletable string array.
  *
- * \param Size of string array which is represented the deletable vocabulary.
+ * \param array_size Size of the deletable string array.
  */
-void free_vocabulary(char ***vocabulary, int vocabulary_size);
+void free_string_array(char ***string_array, int array_size);
 
 /*! \fn int recognize_words(
  *         PTranscriptionNode source_phones_transcription,
@@ -282,18 +320,20 @@ void free_vocabulary(char ***vocabulary, int vocabulary_size);
  * be recognized. As result of this recognition the words transcription will be
  * generated.
  *
- * \param phones_vocabulary The string array which represented phones vocabulary.
+ * \param phones_vocabulary The sorted string array which represents phones
+ * vocabulary.
  *
  * \param phones_number The size of phones vocabulary.
  *
- * \param words_vocabulary The string array which represented words vocabulary.
+ * \param words_vocabulary The sorted string array which represents words
+ * vocabulary.
  *
  * \param words_number The size of words vocabulary.
  *
  * \param words_tree The root of words tree which describes standard phonetic
  * transcriptions of all words.
  *
- * \param bigrams The TWordBigram array which represented bigram model of
+ * \param bigrams The sorted TWordBigram array which represents bigram model of
  * language.
  *
  * \param bigrams_number The number of bigrams.
@@ -311,5 +351,91 @@ int recognize_words(
         char *words_vocabulary[], int words_number,
         PWordsTreeNode words_tree, TWordBigram bigrams[], int bigrams_number,
         PTranscriptionNode *recognized_words);
+
+/*! \fn int read_string(FILE *read_file, char *str)
+ *
+ * \brief This function reads one line from the given text file and trims this
+ * line (trimming is deletion of initial and final spaces, tabs and nonprinted
+ * characters).
+ *
+ * \param read_file Handle of text file.
+ *
+ * \param str Line which will be read. Maximal length of line is 1000
+ * characters.
+ *
+ * \return This function returns length of line which has been read. In case of
+ * error this function returns zero.
+ */
+int read_string(FILE *read_file, char *str);
+
+/*! \fn int find_in_vocabulary(
+ *         char *vocabulary[], int vocabulary_size, char *found_name,
+ *         int *is_equal)
+ *
+ * \brief This function finds the specified node (word or phone) in sorted
+ * vocabulary. If sought node isn't contained in vocabulary, then function
+ * finds the most similar node.
+ *
+ * \param vocabulary Sorted string array which represents the vocabulary in
+ * which search will be realized.
+ *
+ * \param vocabulary_size Size of sorted string array.
+ *
+ * \param found_name Vocabulary node which must be found.
+ *
+ * \param is_equal Pointer to integer flag which defines the search result
+ * (1 - exact coincidence, 0 - the most similar).
+ *
+ * \result This function returns index of found node in vocabulary in case of
+ * successful completion of search, or it returns -1 in case of error.
+ */
+int find_in_vocabulary(char *vocabulary[], int vocabulary_size,
+                       char *found_name, int *is_equal);
+
+/*! \fn int string_to_bigram(
+ *         char *str, char *words_vocabulary[], int words_number,
+ *         TWordBigram *bigram)
+ *
+ * \brief This function parses source string and converts it to the TWordBigram
+ * structure.
+ *
+ * \param str The source string.
+ *
+ * \param words_vocabulary The words vocabulary which is sorted by words names.
+ *
+ * \param words_number Size of words vocabulary.
+ *
+ * \param Pointer to the TWordBigram structure in which information about
+ * bigram will be written.
+ *
+ * \return If source string correctly describes the bigram, then this function
+ * returns 1. Else, this function returns 0.
+ */
+int string_to_bigram(char *str, char *words_vocabulary[], int words_number,
+                     TWordBigram *bigram);
+
+/*! \fn int find_in_bigrams_list(
+ *         TWordBigram bigrams[], int bigrams_number, TWordBigram found_bigram,
+ *         int *is_equal)
+ *
+ * \brief This function finds the specified bigram in sorted bigrams list.
+ * If sought bigram isn't contained in vocabulary, then function finds the most
+ * similar node.
+ *
+ * \param bigrams Sorted TWordBigram array which represents the bigrams list in
+ * which search will be realized.
+ *
+ * \param bigrams_number Size of the sorted TWordBigram array.
+ *
+ * \param found_bigram The bigram which must be found.
+ *
+ * \param is_equal Pointer to integer flag which defines the search result
+ * (1 - exact coincidence, 0 - the most similar).
+ *
+ * \result This function returns index of bigram in the bigrams list in case of
+ * successful completion of search, or it returns -1 in case of error.
+ */
+int find_in_bigrams_list(TWordBigram bigrams[], int bigrams_number,
+                         TWordBigram found_bigram, int *is_equal);
 
 #endif // BOND005_LVCSR_LIB_H
