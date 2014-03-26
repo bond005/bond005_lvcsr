@@ -76,14 +76,20 @@ typedef struct {
  */
 typedef TTranscriptionNode* PTranscriptionNode;
 
-/*! \struct TMLFFileNode
- * \brief Structure for representation of
+/*! \struct TMLFFilePart
+ * \brief Structure for representation of one part of the MLF file body. Any
+ * MLF file consists of header and body. By-turn, body combines some label
+ * files describing speech transcriptions. Thus, one part of MLF file body
+ * involves name and contents of one label file.
  */
 typedef struct {
-    char *name;
-    PTranscriptionNode transcription;
-    int transcription_size;
-} TMLFFileNode;
+    char *name;                      /**< Name of the label file. */
+    PTranscriptionNode transcription;/**< Contents of the label file, i.e.
+                                          speech transcription. */
+    int transcription_size;          /**< Length of speech transcription, i.e.
+                                          number of transcribed acoustical
+                                          events. */
+} TMLFFilePart;
 
 /*! \struct TWordBigram
  * \brief Structure for representation of one words bigram.
@@ -94,16 +100,15 @@ typedef struct {
     float probability;/**< Probability of bigram. */
 } TWordBigram;
 
-/*! \fn int load_phones_transcriptions(
+/*! \fn int load_phones_MLF(
  *         char *mlf_name, char **phones_vocabulary, int phones_number,
- *         PTranscriptionNode **transcriptions_of_files,
- *         char ***names_of_files);
+ *         TMLFFilePart **mlf_data);
  *
- * \brief This function loads list of phones transcriptions and names of their
- * files from the given MLF file. This MLF file must contain not only labels of
- * acoustical events (i.e. names of phones) but also start and end times of these
- * events. Besides, probabilities of these acoustical events can be present at
- * the MLF file.
+ * \brief This function loads MLF file describing phones transcriptions of some
+ * speech signals. This MLF file must contain not only labels of acoustical
+ * events (i.e. names of phones) but also start and end times of these events.
+ * Besides, probabilities of these acoustical events can be present at the MLF
+ * file.
  *
  * \param mlf_name The name of source MLF file.
  *
@@ -111,31 +116,25 @@ typedef struct {
  *
  * \param phones_number The size of phones vocabulary.
  *
- * \param transcriptions_of_files Pointer to the array of transcriptions into
- * which phones transcriptions will be written. Memory for this array will be
- * allocated automatically in this function.
- *
- * \param names_of_files Pointer to the string array into which names of
- * transcriptions files will be written. Memory for this array will be
- * allocated automatically in this function.
+ * \param mlf_data Pointer to array of MLF file's parts (one part of MLF file
+ * involves name of the some label file and phones transcription containing in
+ * this label file). Memory for this array will be allocated automatically in
+ * this function.
  *
  * \return If the loading has been completed successfully then this function
- * will return number of loaded phones transcriptions and corresponding files
- * names, else this function will return zero.
+ * will return number of loaded parts of MLF file (i.e. size of loaded MLF data
+ * array), else this function will return zero.
  */
-int load_phones_transcriptions(char *mlf_name,
-                               char **phones_vocabulary, int phones_number,
-                               PTranscriptionNode **transcriptions_of_files,
-                               char ***names_of_files);
+int load_phones_MLF(char *mlf_name, char **phones_vocabulary,int phones_number,
+                    TMLFFilePart **mlf_data);
 
-/*! \fn int load_words_transcriptions(
+/*! \fn int load_words_MLF(
  *         char *mlf_name, char **words_vocabulary, int words_number,
- *         PTranscriptionNode **transcriptions_of_files,
- *         char ***names_of_files);
+ *         TMLFFilePart **mlf_data);
  *
- * \brief This function loads list of words transcriptions and names of their
- * files from the given MLF file. This MLF file must contain only labels of
- * acoustical events (i.e. names of words).
+ * \brief This function loads MLF file describing words transcriptions of some
+ * speech signals. This MLF file must contain only labels of acoustical events
+ * (i.e. names of words).
  *
  * \param mlf_name The name of source MLF file.
  *
@@ -143,22 +142,17 @@ int load_phones_transcriptions(char *mlf_name,
  *
  * \param words_number The size of words vocabulary.
  *
- * \param transcriptions_of_files Pointer to the array of transcriptions into
- * which words transcriptions will be written. Memory for this array will be
- * allocated automatically in this function.
- *
- * \param names_of_files Pointer to the string array into which names of
- * transcriptions files will be written. Memory for this array will be
- * allocated automatically in this function.
+ * \param mlf_data Pointer to array of MLF file's parts (one part of MLF file
+ * involves name of the some label file and words transcription containing in
+ * this label file). Memory for this array will be allocated automatically in
+ * this function.
  *
  * \return If the loading has been completed successfully then this function
- * will return number of loaded words transcriptions and corresponding files
- * names, else this function will return zero.
+ * will return number of loaded parts of MLF file (i.e. size of loaded MLF data
+ * array), else this function will return zero.
  */
-int load_words_transcriptions(char *mlf_name,
-                              char **words_vocabulary, int words_number,
-                              PTranscriptionNode **transcriptions_of_files,
-                              char ***names_of_files);
+int load_words_MLF(char *mlf_name, char **words_vocabulary, int words_number,
+                   TMLFFilePart **mlf_data);
 
 /*! \fn int save_words_transcriptions(
  *         char *mlf_name, char **words_vocabulary, int words_number,
@@ -308,27 +302,15 @@ void free_string_array(char ***string_array, int array_size);
 
 /*! \fn int recognize_words(
  *         PTranscriptionNode source_phones_transcription,
- *         char *phones_vocabulary[], int phones_number,
- *         char *words_vocabulary[], int words_number,
  *         PWordsTreeNode words_tree, TWordBigram bigrams[],int bigrams_number,
  *         PTranscriptionNode *recognized_words)
  *
  * \brief This function recognizes all words in the source phones sequence
- * using vocabularies of phones and words, the bigrams list and the words tree.
+ * using the words tree and the bigrams list.
  *
  * \param source_phones_transcription The source phones transcription which will
  * be recognized. As result of this recognition the words transcription will be
  * generated.
- *
- * \param phones_vocabulary The sorted string array which represents phones
- * vocabulary.
- *
- * \param phones_number The size of phones vocabulary.
- *
- * \param words_vocabulary The sorted string array which represents words
- * vocabulary.
- *
- * \param words_number The size of words vocabulary.
  *
  * \param words_tree The root of words tree which describes standard phonetic
  * transcriptions of all words.
@@ -347,8 +329,6 @@ void free_string_array(char ***string_array, int array_size);
  */
 int recognize_words(
         PTranscriptionNode source_phones_transcription,
-        char *phones_vocabulary[], int phones_number,
-        char *words_vocabulary[], int words_number,
         PWordsTreeNode words_tree, TWordBigram bigrams[], int bigrams_number,
         PTranscriptionNode *recognized_words);
 

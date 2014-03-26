@@ -275,18 +275,14 @@ int string_to_bigram(char *str, char *words_vocabulary[], int words_number,
     return 1;
 }
 
-int load_phones_transcriptions(char *mlf_name,
-                               char **phones_vocabulary, int phones_number,
-                               PTranscriptionNode **transcriptions_of_files,
-                               char ***names_of_files)
+int load_phones_MLF(char *mlf_name, char **phones_vocabulary,int phones_number,
+                    TMLFFilePart **mlf_data)
 {
     //...
 }
 
-int load_words_transcriptions(char *mlf_name,
-                              char **words_vocabulary, int words_number,
-                              PTranscriptionNode **transcriptions_of_files,
-                              char ***names_of_files)
+int load_words_MLF(char *mlf_name, char **words_vocabulary, int words_number,
+                   TMLFFilePart **mlf_data)
 {
     int buffer_size = 0, files_number = 0, nodes_number = 0;
     int reading_state = HEADER_EXPECTATION_STATE;
@@ -566,8 +562,6 @@ void free_string_array(char ***string_array, int array_size)
 
 int recognize_words(
         PTranscriptionNode source_phones_transcription,
-        char *phones_vocabulary[], int phones_number,
-        char *words_vocabulary[], int words_number,
         PWordsTreeNode words_tree,
         TWordBigram bigrams[], int bigrams_number,
         PTranscriptionNode *recognized_words)
