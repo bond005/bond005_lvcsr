@@ -309,6 +309,11 @@ int load_words_bigrams(char *file_name, char **words_vocabulary,
  * from the given text file and creates a new words tree on basis on this
  * information.
  *
+ * \details It is basic function of this library. This function uses such
+ * additional functions of library as add_word_to_words_tree(),
+ * find_in_vocabulary(), parse_transcription_str(), read_string()
+ * and select_word_and_transcription().
+ *
  * \param file_name The name of text file with words vocabulary which will be
  * loaded (this file describes vocabulary words and their transcriptions).
  *
@@ -329,6 +334,24 @@ int load_words_bigrams(char *file_name, char **words_vocabulary,
 PWordsTreeNode create_words_vocabulary_tree(
         char *file_name, char **phones_vocabulary, int phones_number,
         char **words_vocabulary, int words_number);
+
+/*! \fn int word_exists_in_words_tree(int word_index,
+ *         PWordsTreeNode words_tree_root)
+ *
+ * \brief This function checks existence of the given word in the given words
+ * tree.
+ *
+ * \details It is basic function of this library.
+ *
+ * \param word_index The index of checked word in the words vocabulary.
+ *
+ * \param words_tree_root The root of words tree in which the specified word
+ * will be found.
+ *
+ * \return This function returns 1 in case of existence of checked word, and it
+ * returns 0 in case of nonexistence of checked word or any error.
+ */
+int word_exists_in_words_tree(int word_index, PWordsTreeNode words_tree_root);
 
 /*! \fn void free_MLF(TMLFFilePart **mlf_data, int number_of_MLF_parts)
  *
@@ -648,5 +671,16 @@ int parse_transcription_str(char *transcription_str, char **phones_vocabulary,
  */
 int add_word_to_words_tree(int word_index, int word_phones[], int word_length,
                            PWordsTreeNode words_tree_root);
+
+/*! \fn void free_words_tree_node(PWordsTreeNode deleted_node)
+ *
+ * \brief Free memory which was allocated for the given words tree node.
+ *
+ * \details It is additional function of this library. This function is used in
+ * such function of library as free_words_tree().
+ *
+ * \param The deletable words tree node.
+ */
+void free_words_tree_node(PWordsTreeNode deleted_node);
 
 #endif // BOND005_LVCSR_LIB_H

@@ -1,11 +1,18 @@
 #include <stdlib.h>
+#include <string.h>
 #include <CUnit/Basic.h>
 #include <CUnit/CUnit.h>
 
 #include "../bond005_lvcsr_lib.h"
 #include "parse_transcription_str_test.h"
 
-int create_test_suites_for_parse_transcription_str()
+#define STR_SIZE 100
+#define VOCABULARY_SIZE 5
+
+static char transcription_str[STR_SIZE];
+static char *vocabulary[VOCABULARY_SIZE];
+
+int prepare_for_testing_of_parse_transcription_str()
 {
     CU_pSuite pSuite = NULL;
 
@@ -32,27 +39,39 @@ int create_test_suites_for_parse_transcription_str()
 
 int init_suite_parse_transcription_str()
 {
+    int i;
+    memset(transcription_str, 0, STR_SIZE);
+    strcpy(transcription_str, "a d c");
+    for (i = 0; i < VOCABULARY_SIZE; i++)
+    {
+        vocabulary[i] = malloc(STR_SIZE);
+        memset(vocabulary[i], 0, STR_SIZE);
+        vocabulary[i][0] = (char)((int)'a' + i);
+    }
     return 0;
 }
 
 int clean_suite_parse_transcription_str()
 {
+    int i;
+    for (i = 0; i < VOCABULARY_SIZE; i++)
+    {
+        free(vocabulary[i]);
+    }
     return 0;
 }
 
 void parse_transcription_str_valid_test_1()
 {
-    char *transcription_str = "a d c";
-    char *phones_vocabulary[] = { "a", "b", "c", "d", "e" };
-    int phones_number = 5;
+    int phones_number = VOCABULARY_SIZE;
     int phones_sequence[3];
     int phones_sequence_length = 3;
     int target_phones_sequence[3] = { 0, 3, 2 };
     int i;
 
     CU_ASSERT_EQUAL_FATAL(phones_sequence_length, parse_transcription_str(
-                              transcription_str, phones_vocabulary,
-                              phones_number, phones_sequence));
+                              transcription_str, vocabulary, phones_number,
+                              phones_sequence));
     for (i = 0; i < phones_sequence_length; i++)
     {
         CU_ASSERT_EQUAL(target_phones_sequence[i], phones_sequence[i]);
@@ -61,21 +80,19 @@ void parse_transcription_str_valid_test_1()
 
 void parse_transcription_str_invalid_test_1()
 {
-    char *transcription_str = "a d c";
-    char *phones_vocabulary[] = { "a", "b", "c", "d", "e" };
-    int phones_number = 5;
+    int phones_number = VOCABULARY_SIZE;
     int phones_sequence[3];
 
     CU_ASSERT_EQUAL_FATAL(0, parse_transcription_str(
-                              NULL, phones_vocabulary, phones_number,
+                              NULL, vocabulary, phones_number,
                               phones_sequence));
     CU_ASSERT_EQUAL_FATAL(0, parse_transcription_str(
                               transcription_str, NULL, phones_number,
                               phones_sequence));
     CU_ASSERT_EQUAL_FATAL(0, parse_transcription_str(
-                              transcription_str, phones_vocabulary, 0,
+                              transcription_str, vocabulary, 0,
                               phones_sequence));
     CU_ASSERT_EQUAL_FATAL(0, parse_transcription_str(
-                              transcription_str, phones_vocabulary,
-                              phones_number, NULL));
+                              transcription_str, vocabulary, phones_number,
+                              NULL));
 }

@@ -30,6 +30,11 @@ int read_string(FILE *read_file, char *str)
 {
     int start_pos = 0, end_pos = 0;
 
+    if ((read_file == NULL) || (str == NULL))
+    {
+        return 0;
+    }
+
     memset(str, 0, BUFFER_SIZE);
     if (fgets(str, BUFFER_SIZE, read_file) == NULL)
     {
@@ -63,7 +68,7 @@ int read_string(FILE *read_file, char *str)
 
     if (start_pos > 0)
     {
-        memmove(&str[0], &str[start_pos], end_pos-start_pos+1);
+        memmove(&str[0], &str[start_pos], end_pos-start_pos+2);
     }
 
     return (end_pos - start_pos + 1);
@@ -160,13 +165,9 @@ int find_in_vocabulary(char *vocabulary[], int vocabulary_size,
     {
         *is_equal = 0;
     }
-    if ((vocabulary_size < 0) || ((vocabulary_size > 0)&&(vocabulary == NULL)))
+    if ((found_name == NULL) || (vocabulary_size <= 0) || (vocabulary == NULL))
     {
         return -1;
-    }
-    if (vocabulary_size == 0)
-    {
-        return 0;
     }
 
     int compare_res, first_pos = 0, last_pos = vocabulary_size, middle_pos;
@@ -433,14 +434,14 @@ int select_word_and_transcription(char *str, char **word_substr,
 {
     int i, j;
 
-    *word_substr = NULL;
-    *transcription_substr = NULL;
-
     if ((str == NULL) || (word_substr == NULL)
             || (transcription_substr == NULL))
     {
         return 0;
     }
+
+    *word_substr = NULL;
+    *transcription_substr = NULL;
 
     i = 0;
     while (str[i] != 0)
@@ -629,6 +630,28 @@ int add_word_to_words_tree(int word_index, int word_phones[], int word_length,
     next_node->number_of_next_nodes = 0;
     next_node->next_nodes = NULL;
     return 1;
+}
+
+void free_words_tree_node(PWordsTreeNode deleted_node)
+{
+    PWordsTreeNode next_node = NULL;
+    int i;
+
+    if (deleted_node == NULL)
+    {
+        return;
+    }
+
+    if ((deleted_node->number_of_next_nodes > 0) && (deleted_node->next_nodes != NULL))
+    {
+        for (i = 0; i < deleted_node->number_of_next_nodes; i++)
+        {
+            next_node = deleted_node->next_nodes + i;
+            free_words_tree_node(next_node);
+        }
+        free(deleted_node->next_nodes);
+        deleted_node->next_nodes = NULL;
+    }
 }
 
 int load_phones_MLF(char *mlf_name, char **phones_vocabulary,int phones_number,
@@ -900,7 +923,7 @@ int save_words_MLF(char *mlf_name, char **words_vocabulary, int words_number,
         return 0;
     }
 
-    if (fprintf(mlf_file, "%s\n", MLF_HEADER) != 1)
+    if (fprintf(mlf_file, "%s\n", MLF_HEADER) <= 0)
     {
         ret = 0;
     }
@@ -914,7 +937,7 @@ int save_words_MLF(char *mlf_name, char **words_vocabulary, int words_number,
                 ret = 0;
                 break;
             }
-            if (fprintf(mlf_file, "\"%s\"\n", mlf_data->name) != 1)
+            if (fprintf(mlf_file, "\"%s\"\n", mlf_data->name) <= 0)
             {
                 ret = 0;
                 break;
@@ -934,7 +957,7 @@ int save_words_MLF(char *mlf_name, char **words_vocabulary, int words_number,
                     ret = 0;
                     break;
                 }
-                if (fprintf(mlf_file, "%s\n", word_name) != 1)
+                if (fprintf(mlf_file, "%s\n", word_name) <= 0)
                 {
                     ret = 0;
                     break;
@@ -945,7 +968,7 @@ int save_words_MLF(char *mlf_name, char **words_vocabulary, int words_number,
             {
                 break;
             }
-            if (fprintf(mlf_file, "%s", ".") != 1)
+            if (fprintf(mlf_file, "%s", ".") <= 0)
             {
                 ret = 0;
                 break;
@@ -1195,6 +1218,38 @@ PWordsTreeNode create_words_vocabulary_tree(
     return root;
 }
 
+int word_exists_in_words_tree(int word_index, PWordsTreeNode words_tree_root)
+{
+    int i, res = 0;
+    PWordsTreeNode cur;
+    if ((word_index < 0) || (words_tree_root == NULL))
+    {
+        return 0;
+    }
+    cur = words_tree_root->next_nodes;
+    for (i = 0; i < words_tree_root->number_of_next_nodes; i++)
+    {
+        if (cur->node_type == WORD_NODE)
+        {
+            if (cur->node_data == word_index)
+            {
+                res = 1;
+                break;
+            }
+        }
+        else if (cur->node_type == PHONE_NODE)
+        {
+            if (word_exists_in_words_tree(word_index, cur))
+            {
+                res = 1;
+                break;
+            }
+        }
+        cur++;
+    }
+    return res;
+}
+
 void free_MLF(TMLFFilePart **mlf_data, int number_of_MLF_parts)
 {
     int i;
@@ -1248,7 +1303,7 @@ void free_words_tree(PWordsTreeNode* root_node)
         for (i = 0; i < deleted_node->number_of_next_nodes; i++)
         {
             next_node = deleted_node->next_nodes + i;
-            free_words_tree(&next_node);
+            free_words_tree_node(next_node);
         }
         free(deleted_node->next_nodes);
         deleted_node->next_nodes = NULL;

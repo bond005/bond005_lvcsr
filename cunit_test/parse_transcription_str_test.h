@@ -1,7 +1,7 @@
 #ifndef PARSE_TRANSCRIPTION_STR_TEST_H
 #define PARSE_TRANSCRIPTION_STR_TEST_H
 
-int create_test_suites_for_parse_transcription_str();
+int prepare_for_testing_of_parse_transcription_str();
 int init_suite_parse_transcription_str();
 int clean_suite_parse_transcription_str();
 void parse_transcription_str_valid_test_1();

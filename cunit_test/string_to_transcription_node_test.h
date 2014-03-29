@@ -1,0 +1,15 @@
+#ifndef STRING_TO_TRANSCRIPTION_NODE_TEST_H
+#define STRING_TO_TRANSCRIPTION_NODE_TEST_H
+
+int prepare_for_testing_of_string_to_transcription_node();
+int init_suite_string_to_transcription_node();
+int clean_suite_string_to_transcription_node();
+void string_to_transcription_node_valid_test_1();
+void string_to_transcription_node_valid_test_2();
+void string_to_transcription_node_invalid_test_1();
+void string_to_transcription_node_invalid_test_2();
+void string_to_transcription_node_invalid_test_3();
+void string_to_transcription_node_invalid_test_4();
+void string_to_transcription_node_invalid_test_5();
+
+#endif // STRING_TO_TRANSCRIPTION_NODE_TEST_H

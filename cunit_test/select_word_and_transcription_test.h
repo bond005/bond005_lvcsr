@@ -1,0 +1,10 @@
+#ifndef SELECT_WORD_AND_TRANSCRIPTION_TEST_H
+#define SELECT_WORD_AND_TRANSCRIPTION_TEST_H
+
+int prepare_for_testing_of_select_word_and_transcription();
+int init_suite_select_word_and_transcription();
+int clean_suite_select_word_and_transcription();
+void select_word_and_transcription_valid_test_1();
+void select_word_and_transcription_invalid_test_1();
+
+#endif // SELECT_WORD_AND_TRANSCRIPTION_TEST_H
