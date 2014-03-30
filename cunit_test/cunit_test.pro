@@ -14,7 +14,11 @@ SOURCES += main.c \
     add_word_to_words_tree_test.c \
     word_exists_in_words_tree_test.c \
     load_phones_MLF_test.c \
-    load_words_MLF_test.c
+    load_words_MLF_test.c \
+    save_words_MLF_test.c \
+    load_phones_vocabulary_test.c \
+    load_words_vocabulary_test.c \
+    create_words_vocabulary_tree_test.c
 
 HEADERS += \
     ../bond005_lvcsr_lib.h \
@@ -27,6 +31,10 @@ HEADERS += \
     add_word_to_words_tree_test.h \
     word_exists_in_words_tree_test.h \
     load_phones_MLF_test.h \
-    load_words_MLF_test.h
+    load_words_MLF_test.h \
+    save_words_MLF_test.h \
+    load_phones_vocabulary_test.h \
+    load_words_vocabulary_test.h \
+    create_words_vocabulary_tree_test.h
 
 LIBS += -lcunit

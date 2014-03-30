@@ -971,7 +971,7 @@ int save_words_MLF(char *mlf_name, char **words_vocabulary, int words_number,
             {
                 break;
             }
-            if (fprintf(mlf_file, "%s", ".") <= 0)
+            if (fprintf(mlf_file, "%c\n", '.') <= 0)
             {
                 ret = 0;
                 break;
@@ -988,6 +988,7 @@ int load_phones_vocabulary(char *file_name, char ***phones_vocabulary)
 {
     int i, j, buffer_size = 0, is_found = 0, vocabulary_size = 0;
     char buffer[BUFFER_SIZE];
+    char **temp_vocabulary;
     FILE *vocabulary_file = NULL;
 
     if (phones_vocabulary == NULL)
@@ -1014,12 +1015,21 @@ int load_phones_vocabulary(char *file_name, char ***phones_vocabulary)
         {
             *phones_vocabulary = realloc(*phones_vocabulary,
                                          (vocabulary_size+1) * sizeof(char*));
-            for (j = vocabulary_size + 1; j > i; j--)
+            temp_vocabulary = *phones_vocabulary;
+            if (i >= 0)
             {
-                *phones_vocabulary[j] = *phones_vocabulary[j-1];
+                for (j = vocabulary_size; j > i; j--)
+                {
+                    temp_vocabulary[j] = temp_vocabulary[j-1];
+                }
             }
-            *phones_vocabulary[i] = malloc((buffer_size+1) * sizeof(char));
-            strcpy(*phones_vocabulary[i], buffer);
+            else
+            {
+                i = vocabulary_size;
+            }
+            temp_vocabulary[i] = malloc((buffer_size+1) * sizeof(char));
+            memset(temp_vocabulary[i], 0, (buffer_size+1) * sizeof(char));
+            strcpy(temp_vocabulary[i], buffer);
             vocabulary_size++;
         }
     }
@@ -1030,10 +1040,11 @@ int load_phones_vocabulary(char *file_name, char ***phones_vocabulary)
 
 int load_words_vocabulary(char *file_name, char ***words_vocabulary)
 {
-    int i, j, buffer_size = 0, is_found = 0, vocabulary_size = 0;
+    int i, j, n, buffer_size = 0, is_found = 0, vocabulary_size = 0;
     int is_ok = 1;
     char buffer[BUFFER_SIZE];
     char *word_name = NULL, *word_transcription = NULL;
+    char **temp_vocabulary;
     FILE *vocabulary_file = NULL;
 
     if (words_vocabulary == NULL)
@@ -1066,12 +1077,22 @@ int load_words_vocabulary(char *file_name, char ***words_vocabulary)
         {
             *words_vocabulary = realloc(*words_vocabulary,
                                         (vocabulary_size+1) * sizeof(char*));
-            for (j = vocabulary_size + 1; j > i; j--)
+            temp_vocabulary = *words_vocabulary;
+            if (i >= 0)
             {
-                *words_vocabulary[j] = *words_vocabulary[j-1];
+                for (j = vocabulary_size; j > i; j--)
+                {
+                    temp_vocabulary[j] = temp_vocabulary[j-1];
+                }
             }
-            *words_vocabulary[i] = malloc((buffer_size+1) * sizeof(char));
-            strcpy(*words_vocabulary[i], buffer);
+            else
+            {
+                i = vocabulary_size;
+            }
+            n = strlen(word_name);
+            temp_vocabulary[i] = malloc((n+1) * sizeof(char));
+            memset(temp_vocabulary[i], 0, (n+1) * sizeof(char));
+            strcpy(temp_vocabulary[i], word_name);
             vocabulary_size++;
         }
     }
@@ -1146,7 +1167,7 @@ PWordsTreeNode create_words_vocabulary_tree(
         char **words_vocabulary, int words_number)
 {
     PWordsTreeNode root = NULL;
-    int buffer_size = 0, vocabulary_size = 0;
+    int buffer_size = 0;
     int word_index, phones_sequence_size = 0;
     int is_found = 0, is_ok = 1;
     char buffer[BUFFER_SIZE];
@@ -1183,7 +1204,7 @@ PWordsTreeNode create_words_vocabulary_tree(
             is_ok = 0;
             break;
         }
-        word_index = find_in_vocabulary(words_vocabulary, vocabulary_size,
+        word_index = find_in_vocabulary(words_vocabulary, words_number,
                                         word_name, &is_found);
         if (!is_found)
         {
@@ -1317,6 +1338,7 @@ void free_words_tree(PWordsTreeNode* root_node)
 
 void free_string_array(char ***string_array, int array_size)
 {
+    char **tmp;
     register int i;
 
     if ((string_array == NULL) || (array_size <= 0))
@@ -1327,16 +1349,17 @@ void free_string_array(char ***string_array, int array_size)
     {
         return;
     }
+    tmp = *string_array;
 
     for (i = 0; i < array_size; i++)
     {
-        if (*string_array[i] != NULL)
+        if (tmp[i] != NULL)
         {
-            free(*string_array[i]);
-            *string_array[i] = NULL;
+            free(tmp[i]);
+            tmp[i] = NULL;
         }
     }
-    free(*string_array);
+    free(tmp);
     *string_array = NULL;
 }
 

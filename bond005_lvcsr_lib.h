@@ -440,7 +440,7 @@ int recognize_words(
  * \param read_file Handle of text file.
  *
  * \param str Line which will be read. Maximal length of line is 1000
- * characters.
+ * characters. It must not be constant!
  *
  * \return This function returns length of line which has been read. In case of
  * error this function returns zero.
@@ -458,7 +458,8 @@ int read_string(FILE *read_file, char *str);
  * \details It is additional function of this library. This function is used in
  * such functions of library as load_phones_MLF() and load_words_MLF().
  *
- * \param filename The prepared file name which will be rewritten.
+ * \param filename The prepared file name which will be rewritten. It must not
+ * be constant!
  *
  * \return In case of successful preparing this function returns new length of
  * prepared file name. In case of error this function returns zero.
@@ -596,7 +597,7 @@ int find_in_bigrams_list(TWordBigram bigrams[], int bigrams_number,
  * such functions of library as create_words_vocabulary_tree() and
  * load_words_vocabulary().
  *
- * \param str The source string.
+ * \param str The source string. It must not be constant!
  *
  * \param word_substr Pointer to the substring into which the word name will be
  * written.

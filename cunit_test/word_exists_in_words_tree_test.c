@@ -103,7 +103,7 @@ static PWordsTreeNode create_tree()
     // word: 5
     // word phones: 3->6->2
     cur = &(res->next_nodes[1].next_nodes[0].next_nodes[0].next_nodes[0]);
-    cur->node_data = 1;
+    cur->node_data = 5;
     cur->node_type = WORD_NODE;
     cur->next_nodes = NULL;
     cur->number_of_next_nodes = 0;

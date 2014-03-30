@@ -28,7 +28,7 @@ static void create_words_vocabulary()
         words_vocabulary[i][0] = (char)((int)'a' + i);
         words_vocabulary[i][1] = words_vocabulary[i][0];
         words_vocabulary[i][2] = words_vocabulary[i][1];
-        words_vocabulary[i][4] = 0;
+        words_vocabulary[i][3] = 0;
     }
 }
 
