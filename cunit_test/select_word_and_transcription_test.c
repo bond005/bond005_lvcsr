@@ -15,7 +15,7 @@ static char target_word_str2[STR_SIZE];
 static char target_transcription_str1[STR_SIZE];
 static char target_transcription_str2[STR_SIZE];
 
-void prepare_source_data_for_testing()
+static void prepare_source_data_for_testing()
 {
     memset(source_str1, 0, STR_SIZE);
     strcpy(source_str1, "word = a b' c");
@@ -24,7 +24,7 @@ void prepare_source_data_for_testing()
     strcpy(source_str2, "other_word=c1 d e'");
 }
 
-void prepare_target_data_for_testing()
+static void prepare_target_data_for_testing()
 {
     memset(target_word_str1, 0, STR_SIZE);
     strcpy(target_word_str1, "word");

@@ -22,6 +22,10 @@ int prepare_for_testing_of_find_in_vocabulary()
                              find_in_vocabulary_valid_test_1))
             || (NULL == CU_add_test(pSuite, "Valid partition 2",
                                     find_in_vocabulary_valid_test_2))
+            || (NULL == CU_add_test(pSuite, "Valid partition 3",
+                                    find_in_vocabulary_valid_test_3))
+            || (NULL == CU_add_test(pSuite, "Valid partition 4",
+                                    find_in_vocabulary_valid_test_4))
             || (NULL == CU_add_test(pSuite, "Invalid partitions",
                                     find_in_vocabulary_invalid_test_1)))
     {
@@ -46,6 +50,32 @@ void find_in_vocabulary_valid_test_1()
 {
     char *vocabulary[] = { "aaa", "bbb", "ccc", "ddd", "eee" };
     int vocabulary_size = 5;
+    char *found_name = "eee";
+    int target_index = 4, is_equal = 0;
+
+    CU_ASSERT_EQUAL_FATAL(target_index, find_in_vocabulary(
+                              vocabulary, vocabulary_size, found_name,
+                              &is_equal));
+    CU_ASSERT_TRUE_FATAL(is_equal);
+}
+
+void find_in_vocabulary_valid_test_2()
+{
+    char *vocabulary[] = { "aaa", "bbb", "ccc", "ddd", "eee" };
+    int vocabulary_size = 5;
+    char *found_name = "aaa";
+    int target_index = 0, is_equal = 0;
+
+    CU_ASSERT_EQUAL_FATAL(target_index, find_in_vocabulary(
+                              vocabulary, vocabulary_size, found_name,
+                              &is_equal));
+    CU_ASSERT_TRUE_FATAL(is_equal);
+}
+
+void find_in_vocabulary_valid_test_3()
+{
+    char *vocabulary[] = { "aaa", "bbb", "ccc", "ddd", "eee" };
+    int vocabulary_size = 5;
     char *found_name = "bbb";
     int target_index = 1, is_equal = 0;
 
@@ -55,7 +85,7 @@ void find_in_vocabulary_valid_test_1()
     CU_ASSERT_TRUE_FATAL(is_equal);
 }
 
-void find_in_vocabulary_valid_test_2()
+void find_in_vocabulary_valid_test_4()
 {
     char *vocabulary[] = { "aaa", "bbb", "ccc", "ddd", "eee" };
     int vocabulary_size = 5;

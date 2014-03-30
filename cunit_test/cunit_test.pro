@@ -11,7 +11,10 @@ SOURCES += main.c \
     read_string_test.c \
     prepare_filename_test.c \
     string_to_transcription_node_test.c \
-    add_word_to_words_tree_test.c
+    add_word_to_words_tree_test.c \
+    word_exists_in_words_tree_test.c \
+    load_phones_MLF_test.c \
+    load_words_MLF_test.c
 
 HEADERS += \
     ../bond005_lvcsr_lib.h \
@@ -21,6 +24,9 @@ HEADERS += \
     read_string_test.h \
     prepare_filename_test.h \
     string_to_transcription_node_test.h \
-    add_word_to_words_tree_test.h
+    add_word_to_words_tree_test.h \
+    word_exists_in_words_tree_test.h \
+    load_phones_MLF_test.h \
+    load_words_MLF_test.h
 
 LIBS += -lcunit

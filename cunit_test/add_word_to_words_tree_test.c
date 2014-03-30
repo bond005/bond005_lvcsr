@@ -12,7 +12,7 @@ static int word_index = 3;
 static int word_phones[] = { 3, 1, 2 };
 static int word_length = 3;
 
-PWordsTreeNode create_empty_tree()
+static PWordsTreeNode create_empty_tree()
 {
     PWordsTreeNode res = malloc(sizeof(TWordsTreeNode));
 
@@ -24,7 +24,7 @@ PWordsTreeNode create_empty_tree()
     return res;
 }
 
-PWordsTreeNode create_uncompleted_tree()
+static PWordsTreeNode create_uncompleted_tree()
 {
     PWordsTreeNode res = malloc(sizeof(TWordsTreeNode));
     PWordsTreeNode cur = NULL;
@@ -158,7 +158,7 @@ PWordsTreeNode create_uncompleted_tree()
     return res;
 }
 
-PWordsTreeNode create_completed_tree()
+static PWordsTreeNode create_completed_tree()
 {
     PWordsTreeNode res = malloc(sizeof(TWordsTreeNode));
     PWordsTreeNode cur = NULL;
@@ -308,7 +308,8 @@ PWordsTreeNode create_completed_tree()
     return res;
 }
 
-int same_words_trees(PWordsTreeNode words_tree1, PWordsTreeNode words_tree2)
+static int same_words_trees(PWordsTreeNode words_tree1,
+                            PWordsTreeNode words_tree2)
 {
     int i, res = 1;
     PWordsTreeNode cur1, cur2;

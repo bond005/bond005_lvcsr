@@ -6,11 +6,11 @@
 #include "../bond005_lvcsr_lib.h"
 #include "prepare_filename_test.h"
 
-char src_filename1_correct[BUFFER_SIZE];
-char src_filename2_correct[BUFFER_SIZE];
-char src_filename1_incorrect[BUFFER_SIZE];
-char src_filename2_incorrect[BUFFER_SIZE];
-char *trg_filename = "test_file.dat";
+static char src_filename1_correct[BUFFER_SIZE];
+static char src_filename2_correct[BUFFER_SIZE];
+static char src_filename1_incorrect[BUFFER_SIZE];
+static char src_filename2_incorrect[BUFFER_SIZE];
+static char *trg_filename = "test_file.dat";
 
 int prepare_for_testing_of_prepare_filename()
 {

@@ -185,11 +185,14 @@ int find_in_vocabulary(char *vocabulary[], int vocabulary_size,
     compare_res = strcmp(vocabulary[last_pos-1], found_name);
     if (compare_res <= 0)
     {
-        if ((compare_res == 0) && (is_equal != NULL))
+        if (compare_res == 0)
         {
-            *is_equal = 1;
+            if (is_equal != NULL)
+            {
+                *is_equal = 1;
+            }
         }
-        return last_pos;
+        return last_pos-1;
     }
 
     while (first_pos < last_pos)
