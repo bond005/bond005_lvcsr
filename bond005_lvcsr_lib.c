@@ -1112,6 +1112,7 @@ int load_words_bigrams(char *file_name, char **words_vocabulary,
     int i, j, buffer_size = 0, is_found = 0, bigrams_number = 0;
     char buffer[BUFFER_SIZE];
     FILE *bigrams_file = NULL;
+    TWordBigram *tmp_bigrams_array;
     TWordBigram new_bigram;
 
     if (bigrams == NULL)
@@ -1144,11 +1145,19 @@ int load_words_bigrams(char *file_name, char **words_vocabulary,
         {
             *bigrams = realloc(*bigrams,
                                (bigrams_number+1) * sizeof(TWordBigram));
-            for (j = bigrams_number + 1; j > i; j--)
+            tmp_bigrams_array = *bigrams;
+            if (i >= 0)
             {
-                *bigrams[j] = *bigrams[j-1];
+                for (j = bigrams_number; j > i; j--)
+                {
+                    tmp_bigrams_array[j] = tmp_bigrams_array[j-1];
+                }
             }
-            *bigrams[i] = new_bigram;
+            else
+            {
+                i = bigrams_number;
+            }
+            tmp_bigrams_array[i] = new_bigram;
             bigrams_number++;
         }
     }
