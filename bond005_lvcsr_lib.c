@@ -1446,7 +1446,77 @@ int create_linear_words_lexicon(
         char **words_vocabulary, int words_number,
         TLinearWordsLexicon **linear_words_lexicon)
 {
-    //...
+    int words_lexicon_size = 0;
+    int buffer_size = 0;
+    int word_index, phonemes_sequence_size = 0;
+    int is_found = 0, is_ok = 1;
+    char buffer[BUFFER_SIZE];
+    int phonemes_sequence[BUFFER_SIZE];
+    char *word_name = NULL, *word_transcription = NULL;
+    FILE *vocabulary_file = NULL;
+    TLinearWordsLexicon *tmp_array;
+
+    if ((file_name==NULL) || (words_vocabulary == NULL) || (words_number <= 0)
+            || (phonemes_vocabulary == NULL) || (phonemes_number <= 0)
+            || (linear_words_lexicon == NULL))
+    {
+        return 0;
+    }
+
+    vocabulary_file = fopen(file_name, "r");
+    if (vocabulary_file == NULL)
+    {
+        return 0;
+    }
+    while (!feof(vocabulary_file))
+    {
+        buffer_size = read_string(vocabulary_file, buffer);
+        if (buffer_size <= 0)
+        {
+            continue;
+        }
+        if (!select_word_and_transcription(buffer, &word_name,
+                                           &word_transcription))
+        {
+            is_ok = 0;
+            break;
+        }
+        word_index = find_in_vocabulary(words_vocabulary, words_number,
+                                        word_name, &is_found);
+        if (!is_found)
+        {
+            is_ok = 0;
+            break;
+        }
+        phonemes_sequence_size = parse_transcription_str(
+                    word_transcription, phonemes_vocabulary, phonemes_number,
+                    phonemes_sequence);
+        if (phonemes_sequence_size <= 0)
+        {
+            is_ok = 0;
+            break;
+        }
+        words_lexicon_size++;
+        *linear_words_lexicon = realloc(
+                    *linear_words_lexicon,
+                    words_lexicon_size * sizeof(TLinearWordsLexicon));
+        tmp_array = *linear_words_lexicon;
+        tmp_array[words_lexicon_size-1].word_index = word_index;
+        tmp_array[words_lexicon_size-1].phonemes_number
+                = phonemes_sequence_size;
+        tmp_array[words_lexicon_size-1].phonemes_indexes
+                = malloc(sizeof(int) * phonemes_sequence_size);
+        memmove(tmp_array[words_lexicon_size-1].phonemes_indexes,
+                phonemes_sequence, phonemes_sequence_size * sizeof(int));
+    }
+    fclose(vocabulary_file);
+    if (!is_ok)
+    {
+        free_linear_words_lexicon(linear_words_lexicon, words_lexicon_size);
+        words_lexicon_size = 0;
+    }
+
+    return words_lexicon_size;
 }
 
 void free_MLF(TMLFFilePart **mlf_data, int number_of_MLF_parts)
@@ -1509,6 +1579,33 @@ void free_words_tree(PWordsTreeNode* root_node)
     }
     free(deleted_node);
     *root_node = NULL;
+}
+
+void free_linear_words_lexicon(TLinearWordsLexicon **words_lexicon,
+                               int lexicon_size)
+{
+    int i;
+    TLinearWordsLexicon *tmp;
+
+    if ((*words_lexicon == NULL) || (lexicon_size <= 0))
+    {
+        return;
+    }
+    tmp = *words_lexicon;
+    if (tmp == NULL)
+    {
+        return;
+    }
+
+    for (i = 0; i < lexicon_size; i++)
+    {
+        if (tmp[i].phonemes_indexes != NULL)
+        {
+            free(tmp[i].phonemes_indexes);
+        }
+    }
+    free(tmp);
+    *words_lexicon = NULL;
 }
 
 void free_string_array(char ***string_array, int array_size)

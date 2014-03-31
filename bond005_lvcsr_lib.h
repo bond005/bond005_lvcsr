@@ -515,6 +515,22 @@ void free_MLF(TMLFFilePart **mlf_data, int number_of_MLF_parts);
  */
 void free_words_tree(PWordsTreeNode* root_node);
 
+/*! \fn void free_linear_words_lexicon(
+ *         TLinearWordsLexicon **words_lexicon, int lexicon_size)
+ *
+ * \brief Free memory which was allowed for the given linear words lexicon.
+ *
+ * \details It is basic function of this library. This function doesn't use any
+ * additional function of this library.
+ *
+ * \param words_lexicon Pointer to the TLinearWordsLexicon array defining the
+ * linear words lexicon which will be deleted.
+ *
+ * \param lexicon_size Length of the deletable TLinearWordsLexicon array.
+ */
+void free_linear_words_lexicon(TLinearWordsLexicon **words_lexicon,
+                               int lexicon_size);
+
 /*! \fn void free_string_array(char ***string_array, int array_size)
  *
  * \brief This function frees memory which was allocated for the given string

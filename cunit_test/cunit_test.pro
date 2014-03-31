@@ -22,7 +22,8 @@ SOURCES += main.c \
     load_language_model_test.c \
     save_language_model_test.c \
     get_bigram_probability_test.c \
-    calculate_language_model_test.c
+    calculate_language_model_test.c \
+    create_linear_words_lexicon_test.c
 
 HEADERS += \
     ../bond005_lvcsr_lib.h \
@@ -43,6 +44,7 @@ HEADERS += \
     load_language_model_test.h \
     save_language_model_test.h \
     get_bigram_probability_test.h \
-    calculate_language_model_test.h
+    calculate_language_model_test.h \
+    create_linear_words_lexicon_test.h
 
 LIBS += -lcunit
