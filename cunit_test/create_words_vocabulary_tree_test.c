@@ -8,8 +8,8 @@
 static char *correct_words_vocabulary_name = "correct_words_vocabulary.txt";
 static char *incorrect_words_vocabulary_name ="incorrect_words_vocabulary.txt";
 static PWordsTreeNode target_tree_root = NULL;
-static int phones_number = 8;
-static char *phones_vocabulary[8];
+static int phonemes_number = 8;
+static char *phonemes_vocabulary[8];
 static int words_number = 6;
 static char *words_vocabulary[6];
 static char *words_transcriptions[6];
@@ -25,136 +25,136 @@ static PWordsTreeNode create_target_tree()
     memset(res->next_nodes, 0, 3 * sizeof(TWordsTreeNode));
     res->number_of_next_nodes = 3;
 
-    // word phones: 2->...
+    // word phonemes: 2->...
     cur = &(res->next_nodes[0]);
     cur->node_data = 2;
-    cur->node_type = PHONE_NODE;
+    cur->node_type = PHONEME_NODE;
     cur->next_nodes = malloc(2 * sizeof(TWordsTreeNode));
     memset(cur->next_nodes, 0, 2 * sizeof(TWordsTreeNode));
     cur->number_of_next_nodes = 2;
 
-    // word phones: 3->...
+    // word phonemes: 3->...
     cur = &(res->next_nodes[1]);
     cur->node_data = 3;
-    cur->node_type = PHONE_NODE;
+    cur->node_type = PHONEME_NODE;
     cur->next_nodes = malloc(2 * sizeof(TWordsTreeNode));
     memset(cur->next_nodes, 0, 2 * sizeof(TWordsTreeNode));
     cur->number_of_next_nodes = 2;
 
-    // word phones: 1->...
+    // word phonemes: 1->...
     cur = &(res->next_nodes[2]);
     cur->node_data = 1;
-    cur->node_type = PHONE_NODE;
+    cur->node_type = PHONEME_NODE;
     cur->next_nodes = malloc(sizeof(TWordsTreeNode));
     memset(cur->next_nodes, 0, sizeof(TWordsTreeNode));
     cur->number_of_next_nodes = 1;
 
-    // word phones: 2->5->...
+    // word phonemes: 2->5->...
     cur = &(res->next_nodes[0].next_nodes[0]);
     cur->node_data = 5;
-    cur->node_type = PHONE_NODE;
+    cur->node_type = PHONEME_NODE;
     cur->next_nodes = malloc(sizeof(TWordsTreeNode));
     memset(cur->next_nodes, 0, sizeof(TWordsTreeNode));
     cur->number_of_next_nodes = 1;
 
-    // word phones: 2->5->1...
+    // word phonemes: 2->5->1...
     cur = &(res->next_nodes[0].next_nodes[0].next_nodes[0]);
     cur->node_data = 1;
-    cur->node_type = PHONE_NODE;
+    cur->node_type = PHONEME_NODE;
     cur->next_nodes = malloc(sizeof(TWordsTreeNode));
     memset(cur->next_nodes, 0, sizeof(TWordsTreeNode));
     cur->number_of_next_nodes = 1;
 
     // word: 0
-    // word phones: 2->5->1
+    // word phonemes: 2->5->1
     cur = &(res->next_nodes[0].next_nodes[0].next_nodes[0].next_nodes[0]);
     cur->node_data = 0;
     cur->node_type = WORD_NODE;
     cur->next_nodes = NULL;
     cur->number_of_next_nodes = 0;
 
-    // word phones: 2->7->...
+    // word phonemes: 2->7->...
     cur = &(res->next_nodes[0].next_nodes[1]);
     cur->node_data = 7;
-    cur->node_type = PHONE_NODE;
+    cur->node_type = PHONEME_NODE;
     cur->next_nodes = malloc(sizeof(TWordsTreeNode));
     memset(cur->next_nodes, 0, sizeof(TWordsTreeNode));
     cur->number_of_next_nodes = 1;
 
     // word: 1
-    // word phones: 2->7
+    // word phonemes: 2->7
     cur = &(res->next_nodes[0].next_nodes[1].next_nodes[0]);
     cur->node_data = 1;
     cur->node_type = WORD_NODE;
     cur->next_nodes = NULL;
     cur->number_of_next_nodes = 0;
 
-    // word phones: 3->6->...
+    // word phonemes: 3->6->...
     cur = &(res->next_nodes[1].next_nodes[0]);
     cur->node_data = 6;
-    cur->node_type = PHONE_NODE;
+    cur->node_type = PHONEME_NODE;
     cur->next_nodes = malloc(sizeof(TWordsTreeNode));
     memset(cur->next_nodes, 0, sizeof(TWordsTreeNode));
     cur->number_of_next_nodes = 1;
 
-    // word phones: 3->6->2...
+    // word phonemes: 3->6->2...
     cur = &(res->next_nodes[1].next_nodes[0].next_nodes[0]);
     cur->node_data = 2;
-    cur->node_type = PHONE_NODE;
+    cur->node_type = PHONEME_NODE;
     cur->next_nodes = malloc(sizeof(TWordsTreeNode));
     memset(cur->next_nodes, 0, sizeof(TWordsTreeNode));
     cur->number_of_next_nodes = 1;
 
     // word: 4
-    // word phones: 3->6->2
+    // word phonemes: 3->6->2
     cur = &(res->next_nodes[1].next_nodes[0].next_nodes[0].next_nodes[0]);
     cur->node_data = 4;
     cur->node_type = WORD_NODE;
     cur->next_nodes = NULL;
     cur->number_of_next_nodes = 0;
 
-    // word phones: 3->1->...
+    // word phonemes: 3->1->...
     cur = &(res->next_nodes[1].next_nodes[1]);
     cur->node_data = 1;
-    cur->node_type = PHONE_NODE;
+    cur->node_type = PHONEME_NODE;
     cur->next_nodes = malloc(2 * sizeof(TWordsTreeNode));
     memset(cur->next_nodes, 0, 2 * sizeof(TWordsTreeNode));
     cur->number_of_next_nodes = 2;
 
     // word: 3
-    // word phones: 3->1
+    // word phonemes: 3->1
     cur = &(res->next_nodes[1].next_nodes[1].next_nodes[0]);
     cur->node_data = 3;
     cur->node_type = WORD_NODE;
     cur->next_nodes = NULL;
     cur->number_of_next_nodes = 0;
 
-    // word phones: 3->1->2->...
+    // word phonemes: 3->1->2->...
     cur = &(res->next_nodes[1].next_nodes[1].next_nodes[1]);
     cur->node_data = 2;
-    cur->node_type = PHONE_NODE;
+    cur->node_type = PHONEME_NODE;
     cur->next_nodes = malloc(sizeof(TWordsTreeNode));
     memset(cur->next_nodes, 0, sizeof(TWordsTreeNode));
     cur->number_of_next_nodes = 1;
 
     // word: 2
-    // word phones: 3->1->2
+    // word phonemes: 3->1->2
     cur = &(res->next_nodes[1].next_nodes[1].next_nodes[1].next_nodes[0]);
     cur->node_data = 2;
     cur->node_type = WORD_NODE;
     cur->next_nodes = NULL;
     cur->number_of_next_nodes = 0;
 
-    // word phones: 1->2...
+    // word phonemes: 1->2...
     cur = &(res->next_nodes[2].next_nodes[0]);
     cur->node_data = 2;
-    cur->node_type = PHONE_NODE;
+    cur->node_type = PHONEME_NODE;
     cur->next_nodes = malloc(sizeof(TWordsTreeNode));
     memset(cur->next_nodes, 0, sizeof(TWordsTreeNode));
     cur->number_of_next_nodes = 1;
 
     // word: 5
-    // word phones: 1->2
+    // word phonemes: 1->2
     cur = &(res->next_nodes[2].next_nodes[0].next_nodes[0]);
     cur->node_data = 5;
     cur->node_type = WORD_NODE;
@@ -164,14 +164,14 @@ static PWordsTreeNode create_target_tree()
     return res;
 }
 
-static void create_phones_vocabulary()
+static void create_phonemes_vocabulary()
 {
     int i;
-    for (i = 0; i < phones_number; i++)
+    for (i = 0; i < phonemes_number; i++)
     {
-        phones_vocabulary[i] = malloc(2 * sizeof(char));
-        phones_vocabulary[i][0] = (char)((int)'a' + i);
-        phones_vocabulary[i][1] = 0;
+        phonemes_vocabulary[i] = malloc(2 * sizeof(char));
+        phonemes_vocabulary[i][0] = (char)((int)'a' + i);
+        phonemes_vocabulary[i][1] = 0;
     }
 }
 
@@ -191,57 +191,57 @@ static void create_words_vocabulary()
 static void create_words_transcriptions()
 {
     // word: 0
-    // word phones: 2->5->1
+    // word phonemes: 2->5->1
     words_transcriptions[0] = malloc(3 * 2 * sizeof(char));
-    words_transcriptions[0][0] = phones_vocabulary[2][0];
+    words_transcriptions[0][0] = phonemes_vocabulary[2][0];
     words_transcriptions[0][1] = ' ';
-    words_transcriptions[0][2] = phones_vocabulary[5][0];
+    words_transcriptions[0][2] = phonemes_vocabulary[5][0];
     words_transcriptions[0][3] = ' ';
-    words_transcriptions[0][4] = phones_vocabulary[1][0];
+    words_transcriptions[0][4] = phonemes_vocabulary[1][0];
     words_transcriptions[0][5] = 0;
 
     // word: 1
-    // word phones: 2->7
+    // word phonemes: 2->7
     words_transcriptions[1] = malloc(2 * 2 * sizeof(char));
-    words_transcriptions[1][0] = phones_vocabulary[2][0];
+    words_transcriptions[1][0] = phonemes_vocabulary[2][0];
     words_transcriptions[1][1] = ' ';
-    words_transcriptions[1][2] = phones_vocabulary[7][0];
+    words_transcriptions[1][2] = phonemes_vocabulary[7][0];
     words_transcriptions[1][3] = 0;
 
     // word: 4
-    // word phones: 3->6->2
+    // word phonemes: 3->6->2
     words_transcriptions[4] = malloc(3 * 2 * sizeof(char));
-    words_transcriptions[4][0] = phones_vocabulary[3][0];
+    words_transcriptions[4][0] = phonemes_vocabulary[3][0];
     words_transcriptions[4][1] = ' ';
-    words_transcriptions[4][2] = phones_vocabulary[6][0];
+    words_transcriptions[4][2] = phonemes_vocabulary[6][0];
     words_transcriptions[4][3] = ' ';
-    words_transcriptions[4][4] = phones_vocabulary[2][0];
+    words_transcriptions[4][4] = phonemes_vocabulary[2][0];
     words_transcriptions[4][5] = 0;
 
     // word: 3
-    // word phones: 3->1
+    // word phonemes: 3->1
     words_transcriptions[3] = malloc(2 * 2 * sizeof(char));
-    words_transcriptions[3][0] = phones_vocabulary[3][0];
+    words_transcriptions[3][0] = phonemes_vocabulary[3][0];
     words_transcriptions[3][1] = ' ';
-    words_transcriptions[3][2] = phones_vocabulary[1][0];
+    words_transcriptions[3][2] = phonemes_vocabulary[1][0];
     words_transcriptions[3][3] = 0;
 
     // word: 2
-    // word phones: 3->1->2
+    // word phonemes: 3->1->2
     words_transcriptions[2] = malloc(3 * 2 * sizeof(char));
-    words_transcriptions[2][0] = phones_vocabulary[3][0];
+    words_transcriptions[2][0] = phonemes_vocabulary[3][0];
     words_transcriptions[2][1] = ' ';
-    words_transcriptions[2][2] = phones_vocabulary[1][0];
+    words_transcriptions[2][2] = phonemes_vocabulary[1][0];
     words_transcriptions[2][3] = ' ';
-    words_transcriptions[2][4] = phones_vocabulary[2][0];
+    words_transcriptions[2][4] = phonemes_vocabulary[2][0];
     words_transcriptions[2][5] = 0;
 
     // word: 5
-    // word phones: 1->2
+    // word phonemes: 1->2
     words_transcriptions[5] = malloc(2 * 2 * sizeof(char));
-    words_transcriptions[5][0] = phones_vocabulary[1][0];
+    words_transcriptions[5][0] = phonemes_vocabulary[1][0];
     words_transcriptions[5][1] = ' ';
-    words_transcriptions[5][2] = phones_vocabulary[2][0];
+    words_transcriptions[5][2] = phonemes_vocabulary[2][0];
     words_transcriptions[5][3] = 0;
 }
 
@@ -423,7 +423,7 @@ int prepare_for_testing_of_create_words_vocabulary_tree()
 int init_suite_create_words_vocabulary_tree()
 {
     target_tree_root = create_target_tree();
-    create_phones_vocabulary();
+    create_phonemes_vocabulary();
     create_words_vocabulary();
     create_words_transcriptions();
     if (!save_correct_words_vocabulary_for_testing())
@@ -441,12 +441,12 @@ int clean_suite_create_words_vocabulary_tree()
 {
     int i;
     free_words_tree(&target_tree_root);
-    for (i = 0; i < phones_number; i++)
+    for (i = 0; i < phonemes_number; i++)
     {
-        if (phones_vocabulary[i] != NULL)
+        if (phonemes_vocabulary[i] != NULL)
         {
-            free(phones_vocabulary[i]);
-            phones_vocabulary[i] = NULL;
+            free(phonemes_vocabulary[i]);
+            phonemes_vocabulary[i] = NULL;
         }
     }
     for (i = 0; i < words_number; i++)
@@ -473,8 +473,8 @@ void create_words_vocabulary_tree_valid_test_1()
     int tree_is_null = 1, tree_is_correct = 0;
 
     created_tree_root = create_words_vocabulary_tree(
-                correct_words_vocabulary_name, phones_vocabulary,phones_number,
-                words_vocabulary, words_number);
+                correct_words_vocabulary_name, phonemes_vocabulary,
+                phonemes_number, words_vocabulary, words_number);
     if (created_tree_root != NULL)
     {
         tree_is_null = 0;
@@ -495,8 +495,8 @@ void create_words_vocabulary_tree_valid_test_2()
     int tree_is_null = 1;
 
     created_tree_root = create_words_vocabulary_tree(
-                incorrect_words_vocabulary_name, phones_vocabulary,
-                phones_number, words_vocabulary, words_number);
+                incorrect_words_vocabulary_name, phonemes_vocabulary,
+                phonemes_number, words_vocabulary, words_number);
     tree_is_null = (created_tree_root == NULL);
     free_words_tree(&created_tree_root);
     CU_ASSERT_TRUE_FATAL(tree_is_null);
@@ -508,36 +508,36 @@ void create_words_vocabulary_tree_invalid_test_1()
     int tree_is_null = 1;
 
     created_tree_root = create_words_vocabulary_tree(
-                NULL, phones_vocabulary, phones_number,
+                NULL, phonemes_vocabulary, phonemes_number,
                 words_vocabulary, words_number);
     tree_is_null = (created_tree_root == NULL);
     free_words_tree(&created_tree_root);
     CU_ASSERT_TRUE_FATAL(tree_is_null);
 
     created_tree_root = create_words_vocabulary_tree(
-                correct_words_vocabulary_name, NULL, phones_number,
+                correct_words_vocabulary_name, NULL, phonemes_number,
                 words_vocabulary, words_number);
     tree_is_null = (created_tree_root == NULL);
     free_words_tree(&created_tree_root);
     CU_ASSERT_TRUE_FATAL(tree_is_null);
 
     created_tree_root = create_words_vocabulary_tree(
-                correct_words_vocabulary_name, phones_vocabulary, 0,
+                correct_words_vocabulary_name, phonemes_vocabulary, 0,
                 words_vocabulary, words_number);
     tree_is_null = (created_tree_root == NULL);
     free_words_tree(&created_tree_root);
     CU_ASSERT_TRUE_FATAL(tree_is_null);
 
     created_tree_root = create_words_vocabulary_tree(
-                correct_words_vocabulary_name, phones_vocabulary,phones_number,
-                NULL, words_number);
+                correct_words_vocabulary_name, phonemes_vocabulary,
+                phonemes_number, NULL, words_number);
     tree_is_null = (created_tree_root == NULL);
     free_words_tree(&created_tree_root);
     CU_ASSERT_TRUE_FATAL(tree_is_null);
 
     created_tree_root = create_words_vocabulary_tree(
-                correct_words_vocabulary_name, phones_vocabulary,phones_number,
-                words_vocabulary, 0);
+                correct_words_vocabulary_name, phonemes_vocabulary,
+                phonemes_number, words_vocabulary, 0);
     tree_is_null = (created_tree_root == NULL);
     free_words_tree(&created_tree_root);
     CU_ASSERT_TRUE_FATAL(tree_is_null);

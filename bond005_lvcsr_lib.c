@@ -26,6 +26,21 @@
 #include <string.h>
 #include "bond005_lvcsr_lib.h"
 
+static int compare_bigrams(const void *ptr1, const void *ptr2)
+{
+    int res;
+    TWordBigram *bigram1 = (TWordBigram*)ptr1;
+    TWordBigram *bigram2 = (TWordBigram*)ptr2;
+
+    res = bigram1->first_word - bigram2->first_word;
+    if (res == 0)
+    {
+        res = bigram1->second_word - bigram2->second_word;
+    }
+
+    return res;
+}
+
 int read_string(FILE *read_file, char *str)
 {
     int start_pos = 0, end_pos = 0;
@@ -377,61 +392,6 @@ int find_in_bigrams_list(TWordBigram bigrams[], int bigrams_number,
     return last_pos;
 }
 
-int string_to_bigram(char *str, char *words_vocabulary[], int words_number,
-                     TWordBigram *bigram)
-{
-    char *first_word = NULL, *second_word = NULL, *probability_str = NULL;
-    int is_equal = 0;
-
-    if ((words_number <= 0) || (words_vocabulary == NULL) || (str == NULL))
-    {
-        return 0;
-    }
-
-    first_word = strtok(str, " \t");
-    if (first_word == NULL)
-    {
-        return 0;
-    }
-    second_word = strtok(NULL, " \t");
-    if (second_word == NULL)
-    {
-        return 0;
-    }
-    probability_str = strtok(NULL, " \t");
-    if (probability_str == NULL)
-    {
-        return 0;
-    }
-    if (strtok(NULL, " \t") != NULL)
-    {
-        return 0;
-    }
-
-    bigram->first_word = find_in_vocabulary(words_vocabulary, words_number,
-                                            first_word, &is_equal);
-    if ((!is_equal) || (bigram->first_word < 0))
-    {
-        return 0;
-    }
-    bigram->second_word = find_in_vocabulary(words_vocabulary, words_number,
-                                             second_word, &is_equal);
-    if ((!is_equal) || (bigram->second_word < 0))
-    {
-        return 0;
-    }
-    if (sscanf(probability_str, "%f", &(bigram->probability)) != 1)
-    {
-        return 0;
-    }
-    if ((bigram->probability < 0.0) || (bigram->probability > 1.0))
-    {
-        return 0;
-    }
-
-    return 1;
-}
-
 int select_word_and_transcription(char *str, char **word_substr,
                                   char **transcription_substr)
 {
@@ -495,43 +455,44 @@ int select_word_and_transcription(char *str, char **word_substr,
     return 1;
 }
 
-int parse_transcription_str(char *transcription_str, char **phones_vocabulary,
-                            int phones_number, int phones_sequence[])
+int parse_transcription_str(char *transcription_str,char **phonemes_vocabulary,
+                            int phonemes_number, int phonemes_sequence[])
 {
-    char *phone_name = NULL;
+    char *phoneme_name = NULL;
     int i = 0, is_equal = 0, is_ok = 1;
 
-    if ((transcription_str == NULL) || (phones_vocabulary == NULL)
-            || (phones_number <= 0) || (phones_sequence == NULL))
+    if ((transcription_str == NULL) || (phonemes_vocabulary == NULL)
+            || (phonemes_number <= 0) || (phonemes_sequence == NULL))
     {
         return 0;
     }
 
-    phone_name = strtok(transcription_str, " \t");
-    if (phone_name == NULL)
+    phoneme_name = strtok(transcription_str, " \t");
+    if (phoneme_name == NULL)
     {
         return 0;
     }
-    phones_sequence[i] = find_in_vocabulary(phones_vocabulary, phones_number,
-                                            phone_name, &is_equal);
+    phonemes_sequence[i] = find_in_vocabulary(
+                phonemes_vocabulary, phonemes_number, phoneme_name, &is_equal);
     if (!is_equal)
     {
         return 0;
     }
     i++;
-    phone_name = strtok(NULL, " \t");
+    phoneme_name = strtok(NULL, " \t");
 
-    while (phone_name != NULL)
+    while (phoneme_name != NULL)
     {
-        phones_sequence[i]=find_in_vocabulary(phones_vocabulary, phones_number,
-                                              phone_name, &is_equal);
+        phonemes_sequence[i] = find_in_vocabulary(
+                    phonemes_vocabulary, phonemes_number, phoneme_name,
+                    &is_equal);
         if (!is_equal)
         {
             is_ok = 0;
             break;
         }
         i++;
-        phone_name = strtok(NULL, " \t");
+        phoneme_name = strtok(NULL, " \t");
     }
 
     if (!is_ok)
@@ -541,13 +502,13 @@ int parse_transcription_str(char *transcription_str, char **phones_vocabulary,
     return i;
 }
 
-int add_word_to_words_tree(int word_index, int word_phones[], int word_length,
+int add_word_to_words_tree(int word_index, int word_phonemes[],int word_length,
                            PWordsTreeNode words_tree_root)
 {
     int is_ok = 1, i, n, next_i;
     PWordsTreeNode next_node;
 
-    if ((word_index < 0) || (word_phones == NULL) || (word_length <= 0)
+    if ((word_index < 0) || (word_phonemes == NULL) || (word_length <= 0)
             || (words_tree_root == NULL))
     {
         return 0;
@@ -559,7 +520,7 @@ int add_word_to_words_tree(int word_index, int word_phones[], int word_length,
 
     for (i = 0; i < word_length; i++)
     {
-        if (word_phones[i] <= 0)
+        if (word_phonemes[i] <= 0)
         {
             is_ok = 0;
             break;
@@ -569,14 +530,14 @@ int add_word_to_words_tree(int word_index, int word_phones[], int word_length,
         next_node = words_tree_root->next_nodes + next_i;
         while (next_i >= 0)
         {
-            if (next_node->node_type != PHONE_NODE)
+            if (next_node->node_type != PHONEME_NODE)
             {
                 next_i--;
                 next_node--;
             }
             else
             {
-                if (next_node->node_data == word_phones[i])
+                if (next_node->node_data == word_phonemes[i])
                 {
                     break;
                 }
@@ -591,8 +552,8 @@ int add_word_to_words_tree(int word_index, int word_phones[], int word_length,
                         (n+1) * sizeof(TWordsTreeNode));
             next_node = words_tree_root->next_nodes + n;
             words_tree_root->number_of_next_nodes++;
-            next_node->node_data = word_phones[i];
-            next_node->node_type = PHONE_NODE;
+            next_node->node_data = word_phonemes[i];
+            next_node->node_type = PHONEME_NODE;
             next_node->number_of_next_nodes = 0;
             next_node->next_nodes = NULL;
         }
@@ -657,8 +618,8 @@ void free_words_tree_node(PWordsTreeNode deleted_node)
     }
 }
 
-int load_phones_MLF(char *mlf_name, char **phones_vocabulary,int phones_number,
-                    TMLFFilePart **mlf_data)
+int load_phonemes_MLF(char *mlf_name, char **phonemes_vocabulary,
+                      int phonemes_number, TMLFFilePart **mlf_data)
 {
     int buffer_size = 0, n_files = 0, n_transcription = 0;
     int reading_state = HEADER_EXPECTATION_STATE;
@@ -670,7 +631,7 @@ int load_phones_MLF(char *mlf_name, char **phones_vocabulary,int phones_number,
     PTranscriptionNode last_node_ptr = NULL;
 
     if ((mlf_data == NULL) || (mlf_name == NULL)
-            || (phones_vocabulary == NULL) || (phones_number <= 0))
+            || (phonemes_vocabulary == NULL) || (phonemes_number <= 0))
     {
         return 0;
     }
@@ -728,8 +689,8 @@ int load_phones_MLF(char *mlf_name, char **phones_vocabulary,int phones_number,
             }
             else
             {
-                if (!string_to_transcription_node(buffer, phones_vocabulary,
-                                                  phones_number, &new_node))
+                if (!string_to_transcription_node(buffer, phonemes_vocabulary,
+                                                  phonemes_number, &new_node))
                 {
                     is_ok = 0;
                 }
@@ -984,18 +945,18 @@ int save_words_MLF(char *mlf_name, char **words_vocabulary, int words_number,
     return ret;
 }
 
-int load_phones_vocabulary(char *file_name, char ***phones_vocabulary)
+int load_phonemes_vocabulary(char *file_name, char ***phonemes_vocabulary)
 {
     int i, j, buffer_size = 0, is_found = 0, vocabulary_size = 0;
     char buffer[BUFFER_SIZE];
     char **temp_vocabulary;
     FILE *vocabulary_file = NULL;
 
-    if (phones_vocabulary == NULL)
+    if (phonemes_vocabulary == NULL)
     {
         return 0;
     }
-    *phones_vocabulary = NULL;
+    *phonemes_vocabulary = NULL;
 
     vocabulary_file = fopen(file_name, "r");
     if (vocabulary_file == NULL)
@@ -1009,13 +970,13 @@ int load_phones_vocabulary(char *file_name, char ***phones_vocabulary)
         {
             continue;
         }
-        i = find_in_vocabulary(*phones_vocabulary, vocabulary_size, buffer,
+        i = find_in_vocabulary(*phonemes_vocabulary, vocabulary_size, buffer,
                                &is_found);
         if (!is_found)
         {
-            *phones_vocabulary = realloc(*phones_vocabulary,
-                                         (vocabulary_size+1) * sizeof(char*));
-            temp_vocabulary = *phones_vocabulary;
+            *phonemes_vocabulary = realloc(*phonemes_vocabulary,
+                                           (vocabulary_size+1)*sizeof(char*));
+            temp_vocabulary = *phonemes_vocabulary;
             if (i >= 0)
             {
                 for (j = vocabulary_size; j > i; j--)
@@ -1106,86 +1067,283 @@ int load_words_vocabulary(char *file_name, char ***words_vocabulary)
     return vocabulary_size;
 }
 
-int load_words_bigrams(char *file_name, char **words_vocabulary,
-                       int words_number, TWordBigram *bigrams[])
+int load_language_model(char *file_name,  int words_number,
+                        TLanguageModel *language_model)
 {
-    int i, j, buffer_size = 0, is_found = 0, bigrams_number = 0;
-    char buffer[BUFFER_SIZE];
-    FILE *bigrams_file = NULL;
-    TWordBigram *tmp_bigrams_array;
-    TWordBigram new_bigram;
+    int i, n = 0, is_ok = 1;
+    FILE *h_file = NULL;
 
-    if (bigrams == NULL)
+    if (language_model == NULL)
     {
         return 0;
     }
-    *bigrams = NULL;
+    language_model->unigrams_number = 0;
+    language_model->unigrams_probabilities = NULL;
+    language_model->bigrams_number = 0;
+    language_model->bigrams = NULL;
 
-    bigrams_file = fopen(file_name, "r");
-    if (bigrams_file == NULL)
+    h_file = fopen(file_name, "rb");
+    if (h_file == NULL)
     {
         return 0;
     }
-    while (!feof(bigrams_file))
+
+    if (fread(&n, sizeof(int), 1, h_file) != 1)
     {
-        buffer_size = read_string(bigrams_file, buffer);
-        if (buffer_size <= 0)
+        fclose(h_file);
+        return 0;
+    }
+    if (n != words_number)
+    {
+        fclose(h_file);
+        return 0;
+    }
+    language_model->unigrams_probabilities = malloc(n * sizeof(float));
+    language_model->unigrams_number = n;
+    if (fread(language_model->unigrams_probabilities, sizeof(float), n, h_file)
+            != n)
+    {
+        free_language_model(language_model);
+        fclose(h_file);
+        return 0;
+    }
+    for (i = 0; i < n; i++)
+    {
+        if ((language_model->unigrams_probabilities[i] < 0.0)
+                || (language_model->unigrams_probabilities[i] > 1.0))
         {
-            continue;
-        }
-        if (!string_to_bigram(buffer, words_vocabulary, words_number,
-                              &new_bigram))
-        {
-            bigrams_number = 0;
+            is_ok = 0;
             break;
         }
-        i = find_in_bigrams_list(*bigrams, bigrams_number, new_bigram,
-                                 &is_found);
-        if (!is_found)
-        {
-            *bigrams = realloc(*bigrams,
-                               (bigrams_number+1) * sizeof(TWordBigram));
-            tmp_bigrams_array = *bigrams;
-            if (i >= 0)
-            {
-                for (j = bigrams_number; j > i; j--)
-                {
-                    tmp_bigrams_array[j] = tmp_bigrams_array[j-1];
-                }
-            }
-            else
-            {
-                i = bigrams_number;
-            }
-            tmp_bigrams_array[i] = new_bigram;
-            bigrams_number++;
-        }
     }
-    fclose(bigrams_file);
-    if ((bigrams_number <= 0) && (*bigrams != NULL))
+    if (!is_ok)
     {
-        free(*bigrams);
-        *bigrams = NULL;
+        free_language_model(language_model);
+        fclose(h_file);
+        return 0;
     }
 
-    return bigrams_number;
+    if (fread(&n, sizeof(int), 1, h_file) != 1)
+    {
+        fclose(h_file);
+        return 0;
+    }
+    if (n <= 0)
+    {
+        free_language_model(language_model);
+        fclose(h_file);
+        return 0;
+    }
+    language_model->bigrams = malloc(sizeof(TWordBigram) * n);
+    language_model->bigrams_number = n;
+    if (fread(language_model->bigrams, sizeof(TWordBigram), n, h_file) != n)
+    {
+        free_language_model(language_model);
+        fclose(h_file);
+        return 0;
+    }
+    fclose(h_file);
+    for (i = 0; i < n; i++)
+    {
+        if ((language_model->bigrams[i].first_word < 0)
+                || (language_model->bigrams[i].first_word >= words_number))
+        {
+            is_ok = 0;
+            break;
+        }
+        if ((language_model->bigrams[i].second_word < 0)
+                || (language_model->bigrams[i].second_word >= words_number))
+        {
+            is_ok = 0;
+            break;
+        }
+        if ((language_model->bigrams[i].probability < 0.0)
+                || (language_model->bigrams[i].probability > 1.0))
+        {
+            is_ok = 0;
+            break;
+        }
+    }
+    if (!is_ok)
+    {
+        free_language_model(language_model);
+        return 0;
+    }
+    qsort(language_model->bigrams, n, sizeof(TWordBigram), compare_bigrams);
+    return 1;
+}
+
+int save_language_model(char *file_name, TLanguageModel language_model)
+{
+    int n;
+    FILE *h_file = NULL;
+
+    if ((file_name == NULL) || (language_model.bigrams_number <= 0)
+            || (language_model.unigrams_number <= 0)
+            || (language_model.bigrams == NULL)
+            || (language_model.unigrams_probabilities == NULL))
+    {
+        return 0;
+    }
+
+    h_file = fopen(file_name, "wb");
+    if (h_file == NULL)
+    {
+        return 0;
+    }
+
+    n = language_model.unigrams_number;
+    if (fwrite(&n, sizeof(int), 1, h_file) != 1)
+    {
+        fclose(h_file);
+        return 0;
+    }
+    if (fwrite(language_model.unigrams_probabilities, sizeof(float), n, h_file)
+            != n)
+    {
+        fclose(h_file);
+        return 0;
+    }
+
+    n = language_model.bigrams_number;
+    if (fwrite(&n, sizeof(int), 1, h_file) != 1)
+    {
+        fclose(h_file);
+        return 0;
+    }
+    if (fwrite(language_model.bigrams, sizeof(TWordBigram), n, h_file) != n)
+    {
+        fclose(h_file);
+        return 0;
+    }
+
+    fclose(h_file);
+    return 1;
+}
+
+int calculate_language_model(TMLFFilePart *words_mlf_data, int files_number,
+                             int words_number, float lambda, float eps,
+                             TLanguageModel *language_model)
+{
+    int i, j, word_index, is_ok = 1, total_words_count = 0;
+    int bigram_frequency, start_word_ind, end_word_ind;
+    int *words_frequencies = NULL;
+    float bigram_probability;
+    TWordBigram *cur_bigram;
+
+    if ((words_mlf_data == NULL) || (files_number <= 0) || (words_number <= 0)
+            || (lambda < 0.0) || (lambda > 1.0) || (eps < 0.0) || (eps >= 1.0)
+            || (language_model == NULL))
+    {
+        return 0;
+    }
+
+    language_model->unigrams_number = words_number;
+    language_model->unigrams_probabilities = malloc(words_number
+                                                    * sizeof(float));
+    words_frequencies = malloc(words_number * sizeof(int));
+    language_model->bigrams_number = 0;
+    language_model->bigrams = NULL;
+
+    for (i = 0; i < words_number; i++)
+    {
+        language_model->unigrams_probabilities[i] = 0.0;
+    }
+    for (i = 0; i < files_number; i++)
+    {
+        for (j = 0; j < words_mlf_data[i].transcription_size; j++)
+        {
+            word_index = words_mlf_data[i].transcription[j].node_data;
+            if ((word_index >= words_number) || (word_index < 0))
+            {
+                is_ok = 0;
+                break;
+            }
+            words_frequencies[word_index]++;
+            total_words_count++;
+        }
+    }
+    if (!is_ok)
+    {
+        free_language_model(language_model);
+        free(words_frequencies);
+        return 0;
+    }
+    for (i = 0; i < words_number; i++)
+    {
+        if (words_frequencies[i] < 1)
+        {
+            is_ok = 0;
+            break;
+        }
+        language_model->unigrams_probabilities[i]
+                = (float)words_frequencies[i] / (float)total_words_count;
+    }
+    if (!is_ok)
+    {
+        free_language_model(language_model);
+        free(words_frequencies);
+        return 0;
+    }
+
+    for (start_word_ind = 0; start_word_ind < words_number; start_word_ind++)
+    {
+        for (end_word_ind = 0; end_word_ind < words_number; end_word_ind++)
+        {
+            bigram_frequency = 0;
+            for (i = 0; i < files_number; i++)
+            {
+                for (j = 1; j < words_mlf_data[i].transcription_size; j++)
+                {
+                    if (words_mlf_data[i].transcription[j-1].node_data
+                            != start_word_ind)
+                    {
+                        continue;
+                    }
+                    if (words_mlf_data[i].transcription[j].node_data != end_word_ind)
+                    {
+                        continue;
+                    }
+                    bigram_frequency++;
+                }
+            }
+            bigram_probability = (float)bigram_frequency
+                    / (float)words_frequencies[start_word_ind];
+            bigram_probability = lambda * bigram_probability + (1.0 - lambda)
+                    * language_model->unigrams_probabilities[end_word_ind];
+            if (bigram_probability >= eps)
+            {
+                language_model->bigrams_number++;
+                language_model->bigrams = realloc(
+                            language_model->bigrams,
+                            language_model->bigrams_number * sizeof(float));
+                cur_bigram = language_model->bigrams
+                        + language_model->bigrams_number - 1;
+                cur_bigram->first_word = start_word_ind;
+                cur_bigram->second_word = end_word_ind;
+                cur_bigram->probability = bigram_probability;
+            }
+        }
+    }
+
+    return 1;
 }
 
 PWordsTreeNode create_words_vocabulary_tree(
-        char *file_name, char **phones_vocabulary, int phones_number,
+        char *file_name, char **phonemes_vocabulary, int phonemes_number,
         char **words_vocabulary, int words_number)
 {
     PWordsTreeNode root = NULL;
     int buffer_size = 0;
-    int word_index, phones_sequence_size = 0;
+    int word_index, phonemes_sequence_size = 0;
     int is_found = 0, is_ok = 1;
     char buffer[BUFFER_SIZE];
-    int phones_sequence[BUFFER_SIZE];
+    int phonemes_sequence[BUFFER_SIZE];
     char *word_name = NULL, *word_transcription = NULL;
     FILE *vocabulary_file = NULL;
 
     if ((file_name==NULL) || (words_vocabulary == NULL) || (words_number <= 0)
-            || (phones_vocabulary == NULL) || (phones_number <= 0))
+            || (phonemes_vocabulary == NULL) || (phonemes_number <= 0))
     {
         return NULL;
     }
@@ -1220,16 +1378,16 @@ PWordsTreeNode create_words_vocabulary_tree(
             is_ok = 0;
             break;
         }
-        phones_sequence_size = parse_transcription_str(
-                    word_transcription, phones_vocabulary, phones_number,
-                    phones_sequence);
-        if (phones_sequence_size <= 0)
+        phonemes_sequence_size = parse_transcription_str(
+                    word_transcription, phonemes_vocabulary, phonemes_number,
+                    phonemes_sequence);
+        if (phonemes_sequence_size <= 0)
         {
             is_ok = 0;
             break;
         }
-        if (!add_word_to_words_tree(word_index, phones_sequence,
-                                    phones_sequence_size, root))
+        if (!add_word_to_words_tree(word_index, phonemes_sequence,
+                                    phonemes_sequence_size, root))
         {
             is_ok = 0;
             break;
@@ -1270,7 +1428,7 @@ int word_exists_in_words_tree(int word_index, PWordsTreeNode words_tree_root)
                 break;
             }
         }
-        else if (cur->node_type == PHONE_NODE)
+        else if (cur->node_type == PHONEME_NODE)
         {
             if (word_exists_in_words_tree(word_index, cur))
             {
@@ -1281,6 +1439,14 @@ int word_exists_in_words_tree(int word_index, PWordsTreeNode words_tree_root)
         cur++;
     }
     return res;
+}
+
+int create_linear_words_lexicon(
+        char *file_name, char **phonemes_vocabulary, int phonemes_number,
+        char **words_vocabulary, int words_number,
+        TLinearWordsLexicon **linear_words_lexicon)
+{
+    //...
 }
 
 void free_MLF(TMLFFilePart **mlf_data, int number_of_MLF_parts)
@@ -1372,8 +1538,116 @@ void free_string_array(char ***string_array, int array_size)
     *string_array = NULL;
 }
 
+void free_language_model(TLanguageModel *language_model)
+{
+    if (language_model == NULL)
+    {
+        return;
+    }
+    if (language_model->unigrams_probabilities != NULL)
+    {
+        free(language_model->unigrams_probabilities);
+        language_model->unigrams_probabilities = NULL;
+    }
+    if (language_model->bigrams != NULL)
+    {
+        free(language_model->bigrams);
+        language_model->bigrams = NULL;
+    }
+    language_model->unigrams_number = 0;
+    language_model->bigrams_number = 0;
+}
+
+float get_bigram_probability(TLanguageModel language_model, int start_word_ind,
+                             int end_word_ind)
+{
+    int first, last, middle, cmp_res;
+
+    if ((language_model.unigrams_probabilities == NULL)
+            || (language_model.unigrams_number <= 0)
+            || (language_model.bigrams == NULL)
+            || (language_model.bigrams_number <= 0))
+    {
+        return 0.0;
+    }
+    if ((start_word_ind < 0)
+            || (start_word_ind >= language_model.unigrams_number))
+    {
+        return 0.0;
+    }
+    if ((end_word_ind < 0) || (end_word_ind >= language_model.unigrams_number))
+    {
+        return 0.0;
+    }
+
+    first = 0; last = language_model.bigrams_number;
+
+    cmp_res = language_model.bigrams[0].first_word - start_word_ind;
+    if (cmp_res == 0)
+    {
+        cmp_res = language_model.bigrams[0].second_word - end_word_ind;
+    }
+    if (cmp_res > 0)
+    {
+        return 0.0;
+    }
+    if (cmp_res == 0)
+    {
+        return language_model.bigrams[0].probability;
+    }
+
+    cmp_res = language_model.bigrams[last-1].first_word - start_word_ind;
+    if (cmp_res == 0)
+    {
+        cmp_res = language_model.bigrams[last-1].second_word - end_word_ind;
+    }
+    if (cmp_res < 0)
+    {
+        return 0.0;
+    }
+    if (cmp_res == 0)
+    {
+        return language_model.bigrams[last-1].probability;
+    }
+
+    while (first < last)
+    {
+        middle = first + (last - first) / 2;
+
+        cmp_res = start_word_ind - language_model.bigrams[middle].first_word;
+        if (cmp_res == 0)
+        {
+            cmp_res = end_word_ind -language_model.bigrams[middle].second_word;
+        }
+
+        if (cmp_res <= 0)
+        {
+            last = middle;
+            if (cmp_res == 0)
+            {
+                break;
+            }
+        }
+        else
+        {
+            first = middle + 1;
+        }
+    }
+
+    cmp_res = language_model.bigrams[last].first_word-start_word_ind;
+    if (cmp_res == 0)
+    {
+        cmp_res = language_model.bigrams[last].second_word-end_word_ind;
+    }
+    if (cmp_res == 0)
+    {
+        return language_model.bigrams[last].probability;
+    }
+    return 0.0;
+}
+
 int recognize_words(
-        PTranscriptionNode source_phones_transcription,
+        PTranscriptionNode source_phonemes_transcription,
         PWordsTreeNode words_tree,
         TWordBigram bigrams[], int bigrams_number,
         PTranscriptionNode *recognized_words)

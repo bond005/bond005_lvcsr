@@ -9,7 +9,7 @@ static PWordsTreeNode root_of_empty_tree = NULL;
 static PWordsTreeNode root_of_uncompleted_tree = NULL;
 static PWordsTreeNode root_of_completed_tree = NULL;
 static int word_index = 3;
-static int word_phones[] = { 3, 1, 2 };
+static int word_phonemes[] = { 3, 1, 2 };
 static int word_length = 3;
 
 static PWordsTreeNode create_empty_tree()
@@ -35,120 +35,120 @@ static PWordsTreeNode create_uncompleted_tree()
     memset(res->next_nodes, 0, 3 * sizeof(TWordsTreeNode));
     res->number_of_next_nodes = 3;
 
-    // word phones: 2->...
+    // word phonemes: 2->...
     cur = &(res->next_nodes[0]);
     cur->node_data = 2;
-    cur->node_type = PHONE_NODE;
+    cur->node_type = PHONEME_NODE;
     cur->next_nodes = malloc(2 * sizeof(TWordsTreeNode));
     memset(cur->next_nodes, 0, 2 * sizeof(TWordsTreeNode));
     cur->number_of_next_nodes = 2;
 
-    // word phones: 3->...
+    // word phonemes: 3->...
     cur = &(res->next_nodes[1]);
     cur->node_data = 3;
-    cur->node_type = PHONE_NODE;
+    cur->node_type = PHONEME_NODE;
     cur->next_nodes = malloc(2 * sizeof(TWordsTreeNode));
     memset(cur->next_nodes, 0, 2 * sizeof(TWordsTreeNode));
     cur->number_of_next_nodes = 2;
 
-    // word phones: 1->...
+    // word phonemes: 1->...
     cur = &(res->next_nodes[2]);
     cur->node_data = 1;
-    cur->node_type = PHONE_NODE;
+    cur->node_type = PHONEME_NODE;
     cur->next_nodes = malloc(sizeof(TWordsTreeNode));
     memset(cur->next_nodes, 0, sizeof(TWordsTreeNode));
     cur->number_of_next_nodes = 1;
 
-    // word phones: 2->5->...
+    // word phonemes: 2->5->...
     cur = &(res->next_nodes[0].next_nodes[0]);
     cur->node_data = 5;
-    cur->node_type = PHONE_NODE;
+    cur->node_type = PHONEME_NODE;
     cur->next_nodes = malloc(sizeof(TWordsTreeNode));
     memset(cur->next_nodes, 0, sizeof(TWordsTreeNode));
     cur->number_of_next_nodes = 1;
 
-    // word phones: 2->5->1...
+    // word phonemes: 2->5->1...
     cur = &(res->next_nodes[0].next_nodes[0].next_nodes[0]);
     cur->node_data = 1;
-    cur->node_type = PHONE_NODE;
+    cur->node_type = PHONEME_NODE;
     cur->next_nodes = malloc(sizeof(TWordsTreeNode));
     memset(cur->next_nodes, 0, sizeof(TWordsTreeNode));
     cur->number_of_next_nodes = 1;
 
     // word: 1
-    // word phones: 2->5->1
+    // word phonemes: 2->5->1
     cur = &(res->next_nodes[0].next_nodes[0].next_nodes[0].next_nodes[0]);
     cur->node_data = 1;
     cur->node_type = WORD_NODE;
     cur->next_nodes = NULL;
     cur->number_of_next_nodes = 0;
 
-    // word phones: 2->7->...
+    // word phonemes: 2->7->...
     cur = &(res->next_nodes[0].next_nodes[1]);
     cur->node_data = 7;
-    cur->node_type = PHONE_NODE;
+    cur->node_type = PHONEME_NODE;
     cur->next_nodes = malloc(sizeof(TWordsTreeNode));
     memset(cur->next_nodes, 0, sizeof(TWordsTreeNode));
     cur->number_of_next_nodes = 1;
 
     // word: 2
-    // word phones: 2->7
+    // word phonemes: 2->7
     cur = &(res->next_nodes[0].next_nodes[1].next_nodes[0]);
     cur->node_data = 2;
     cur->node_type = WORD_NODE;
     cur->next_nodes = NULL;
     cur->number_of_next_nodes = 0;
 
-    // word phones: 3->6->...
+    // word phonemes: 3->6->...
     cur = &(res->next_nodes[1].next_nodes[0]);
     cur->node_data = 6;
-    cur->node_type = PHONE_NODE;
+    cur->node_type = PHONEME_NODE;
     cur->next_nodes = malloc(sizeof(TWordsTreeNode));
     memset(cur->next_nodes, 0, sizeof(TWordsTreeNode));
     cur->number_of_next_nodes = 1;
 
-    // word phones: 3->6->2...
+    // word phonemes: 3->6->2...
     cur = &(res->next_nodes[1].next_nodes[0].next_nodes[0]);
     cur->node_data = 2;
-    cur->node_type = PHONE_NODE;
+    cur->node_type = PHONEME_NODE;
     cur->next_nodes = malloc(sizeof(TWordsTreeNode));
     memset(cur->next_nodes, 0, sizeof(TWordsTreeNode));
     cur->number_of_next_nodes = 1;
 
     // word: 5
-    // word phones: 3->6->2
+    // word phonemes: 3->6->2
     cur = &(res->next_nodes[1].next_nodes[0].next_nodes[0].next_nodes[0]);
     cur->node_data = 5;
     cur->node_type = WORD_NODE;
     cur->next_nodes = NULL;
     cur->number_of_next_nodes = 0;
 
-    // word phones: 3->1->...
+    // word phonemes: 3->1->...
     cur = &(res->next_nodes[1].next_nodes[1]);
     cur->node_data = 1;
-    cur->node_type = PHONE_NODE;
+    cur->node_type = PHONEME_NODE;
     cur->next_nodes = malloc(sizeof(TWordsTreeNode));
     memset(cur->next_nodes, 0, sizeof(TWordsTreeNode));
     cur->number_of_next_nodes = 1;
 
     // word: 4
-    // word phones: 3->1
+    // word phonemes: 3->1
     cur = &(res->next_nodes[1].next_nodes[1].next_nodes[0]);
     cur->node_data = 4;
     cur->node_type = WORD_NODE;
     cur->next_nodes = NULL;
     cur->number_of_next_nodes = 0;
 
-    // word phones: 1->2...
+    // word phonemes: 1->2...
     cur = &(res->next_nodes[2].next_nodes[0]);
     cur->node_data = 2;
-    cur->node_type = PHONE_NODE;
+    cur->node_type = PHONEME_NODE;
     cur->next_nodes = malloc(sizeof(TWordsTreeNode));
     memset(cur->next_nodes, 0, sizeof(TWordsTreeNode));
     cur->number_of_next_nodes = 1;
 
     // word: 6
-    // word phones: 1->2
+    // word phonemes: 1->2
     cur = &(res->next_nodes[2].next_nodes[0].next_nodes[0]);
     cur->node_data = 6;
     cur->node_type = WORD_NODE;
@@ -169,136 +169,136 @@ static PWordsTreeNode create_completed_tree()
     memset(res->next_nodes, 0, 3 * sizeof(TWordsTreeNode));
     res->number_of_next_nodes = 3;
 
-    // word phones: 2->...
+    // word phonemes: 2->...
     cur = &(res->next_nodes[0]);
     cur->node_data = 2;
-    cur->node_type = PHONE_NODE;
+    cur->node_type = PHONEME_NODE;
     cur->next_nodes = malloc(2 * sizeof(TWordsTreeNode));
     memset(cur->next_nodes, 0, 2 * sizeof(TWordsTreeNode));
     cur->number_of_next_nodes = 2;
 
-    // word phones: 3->...
+    // word phonemes: 3->...
     cur = &(res->next_nodes[1]);
     cur->node_data = 3;
-    cur->node_type = PHONE_NODE;
+    cur->node_type = PHONEME_NODE;
     cur->next_nodes = malloc(2 * sizeof(TWordsTreeNode));
     memset(cur->next_nodes, 0, 2 * sizeof(TWordsTreeNode));
     cur->number_of_next_nodes = 2;
 
-    // word phones: 1->...
+    // word phonemes: 1->...
     cur = &(res->next_nodes[2]);
     cur->node_data = 1;
-    cur->node_type = PHONE_NODE;
+    cur->node_type = PHONEME_NODE;
     cur->next_nodes = malloc(sizeof(TWordsTreeNode));
     memset(cur->next_nodes, 0, sizeof(TWordsTreeNode));
     cur->number_of_next_nodes = 1;
 
-    // word phones: 2->5->...
+    // word phonemes: 2->5->...
     cur = &(res->next_nodes[0].next_nodes[0]);
     cur->node_data = 5;
-    cur->node_type = PHONE_NODE;
+    cur->node_type = PHONEME_NODE;
     cur->next_nodes = malloc(sizeof(TWordsTreeNode));
     memset(cur->next_nodes, 0, sizeof(TWordsTreeNode));
     cur->number_of_next_nodes = 1;
 
-    // word phones: 2->5->1...
+    // word phonemes: 2->5->1...
     cur = &(res->next_nodes[0].next_nodes[0].next_nodes[0]);
     cur->node_data = 1;
-    cur->node_type = PHONE_NODE;
+    cur->node_type = PHONEME_NODE;
     cur->next_nodes = malloc(sizeof(TWordsTreeNode));
     memset(cur->next_nodes, 0, sizeof(TWordsTreeNode));
     cur->number_of_next_nodes = 1;
 
     // word: 1
-    // word phones: 2->5->1
+    // word phonemes: 2->5->1
     cur = &(res->next_nodes[0].next_nodes[0].next_nodes[0].next_nodes[0]);
     cur->node_data = 1;
     cur->node_type = WORD_NODE;
     cur->next_nodes = NULL;
     cur->number_of_next_nodes = 0;
 
-    // word phones: 2->7->...
+    // word phonemes: 2->7->...
     cur = &(res->next_nodes[0].next_nodes[1]);
     cur->node_data = 7;
-    cur->node_type = PHONE_NODE;
+    cur->node_type = PHONEME_NODE;
     cur->next_nodes = malloc(sizeof(TWordsTreeNode));
     memset(cur->next_nodes, 0, sizeof(TWordsTreeNode));
     cur->number_of_next_nodes = 1;
 
     // word: 2
-    // word phones: 2->7
+    // word phonemes: 2->7
     cur = &(res->next_nodes[0].next_nodes[1].next_nodes[0]);
     cur->node_data = 2;
     cur->node_type = WORD_NODE;
     cur->next_nodes = NULL;
     cur->number_of_next_nodes = 0;
 
-    // word phones: 3->6->...
+    // word phonemes: 3->6->...
     cur = &(res->next_nodes[1].next_nodes[0]);
     cur->node_data = 6;
-    cur->node_type = PHONE_NODE;
+    cur->node_type = PHONEME_NODE;
     cur->next_nodes = malloc(sizeof(TWordsTreeNode));
     memset(cur->next_nodes, 0, sizeof(TWordsTreeNode));
     cur->number_of_next_nodes = 1;
 
-    // word phones: 3->6->2...
+    // word phonemes: 3->6->2...
     cur = &(res->next_nodes[1].next_nodes[0].next_nodes[0]);
     cur->node_data = 2;
-    cur->node_type = PHONE_NODE;
+    cur->node_type = PHONEME_NODE;
     cur->next_nodes = malloc(sizeof(TWordsTreeNode));
     memset(cur->next_nodes, 0, sizeof(TWordsTreeNode));
     cur->number_of_next_nodes = 1;
 
     // word: 5
-    // word phones: 3->6->2
+    // word phonemes: 3->6->2
     cur = &(res->next_nodes[1].next_nodes[0].next_nodes[0].next_nodes[0]);
     cur->node_data = 5;
     cur->node_type = WORD_NODE;
     cur->next_nodes = NULL;
     cur->number_of_next_nodes = 0;
 
-    // word phones: 3->1->...
+    // word phonemes: 3->1->...
     cur = &(res->next_nodes[1].next_nodes[1]);
     cur->node_data = 1;
-    cur->node_type = PHONE_NODE;
+    cur->node_type = PHONEME_NODE;
     cur->next_nodes = malloc(2 * sizeof(TWordsTreeNode));
     memset(cur->next_nodes, 0, 2 * sizeof(TWordsTreeNode));
     cur->number_of_next_nodes = 2;
 
     // word: 4
-    // word phones: 3->1
+    // word phonemes: 3->1
     cur = &(res->next_nodes[1].next_nodes[1].next_nodes[0]);
     cur->node_data = 4;
     cur->node_type = WORD_NODE;
     cur->next_nodes = NULL;
     cur->number_of_next_nodes = 0;
 
-    // word phones: 3->1->2->...
+    // word phonemes: 3->1->2->...
     cur = &(res->next_nodes[1].next_nodes[1].next_nodes[1]);
     cur->node_data = 2;
-    cur->node_type = PHONE_NODE;
+    cur->node_type = PHONEME_NODE;
     cur->next_nodes = malloc(sizeof(TWordsTreeNode));
     memset(cur->next_nodes, 0, sizeof(TWordsTreeNode));
     cur->number_of_next_nodes = 1;
 
     // word: 3
-    // word phones: 3->1->2
+    // word phonemes: 3->1->2
     cur = &(res->next_nodes[1].next_nodes[1].next_nodes[1].next_nodes[0]);
     cur->node_data = 3;
     cur->node_type = WORD_NODE;
     cur->next_nodes = NULL;
     cur->number_of_next_nodes = 0;
 
-    // word phones: 1->2...
+    // word phonemes: 1->2...
     cur = &(res->next_nodes[2].next_nodes[0]);
     cur->node_data = 2;
-    cur->node_type = PHONE_NODE;
+    cur->node_type = PHONEME_NODE;
     cur->next_nodes = malloc(sizeof(TWordsTreeNode));
     memset(cur->next_nodes, 0, sizeof(TWordsTreeNode));
     cur->number_of_next_nodes = 1;
 
     // word: 6
-    // word phones: 1->2
+    // word phonemes: 1->2
     cur = &(res->next_nodes[2].next_nodes[0].next_nodes[0]);
     cur->node_data = 6;
     cur->node_type = WORD_NODE;
@@ -402,7 +402,7 @@ int clean_suite_add_word_to_words_tree()
 void add_word_to_words_tree_valid_test_1()
 {
     CU_ASSERT_TRUE_FATAL(add_word_to_words_tree(
-                             word_index, word_phones, word_length,
+                             word_index, word_phonemes, word_length,
                              root_of_empty_tree));
     CU_ASSERT_TRUE_FATAL(word_exists_in_words_tree(
                              word_index, root_of_empty_tree));
@@ -411,7 +411,7 @@ void add_word_to_words_tree_valid_test_1()
 void add_word_to_words_tree_valid_test_2()
 {
     CU_ASSERT_TRUE_FATAL(add_word_to_words_tree(
-                             word_index, word_phones, word_length,
+                             word_index, word_phonemes, word_length,
                              root_of_uncompleted_tree));
     CU_ASSERT_TRUE_FATAL(word_exists_in_words_tree(
                              word_index, root_of_uncompleted_tree));
@@ -422,7 +422,7 @@ void add_word_to_words_tree_valid_test_2()
 void add_word_to_words_tree_valid_test_3()
 {
     CU_ASSERT_TRUE_FATAL(add_word_to_words_tree(
-                             word_index, word_phones, word_length,
+                             word_index, word_phonemes, word_length,
                              root_of_completed_tree));
     CU_ASSERT_TRUE_FATAL(word_exists_in_words_tree(
                              word_index, root_of_completed_tree));
@@ -431,14 +431,14 @@ void add_word_to_words_tree_valid_test_3()
 void add_word_to_words_tree_invalid_test_1()
 {
     CU_ASSERT_FALSE_FATAL(add_word_to_words_tree(
-                              -1, word_phones, word_length,
+                              -1, word_phonemes, word_length,
                               root_of_completed_tree));
     CU_ASSERT_FALSE_FATAL(add_word_to_words_tree(
                               word_index, NULL, word_length,
                               root_of_completed_tree));
     CU_ASSERT_FALSE_FATAL(add_word_to_words_tree(
-                              word_index, word_phones, 0,
+                              word_index, word_phonemes, 0,
                               root_of_completed_tree));
     CU_ASSERT_FALSE_FATAL(add_word_to_words_tree(
-                              word_index, word_phones, word_length, NULL));
+                              word_index, word_phonemes, word_length, NULL));
 }

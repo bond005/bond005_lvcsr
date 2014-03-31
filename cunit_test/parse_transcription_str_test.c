@@ -63,36 +63,36 @@ int clean_suite_parse_transcription_str()
 
 void parse_transcription_str_valid_test_1()
 {
-    int phones_number = VOCABULARY_SIZE;
-    int phones_sequence[3];
-    int phones_sequence_length = 3;
-    int target_phones_sequence[3] = { 0, 3, 2 };
+    int phonemes_number = VOCABULARY_SIZE;
+    int phonemes_sequence[3];
+    int phonemes_sequence_length = 3;
+    int target_phonemes_sequence[3] = { 0, 3, 2 };
     int i;
 
-    CU_ASSERT_EQUAL_FATAL(phones_sequence_length, parse_transcription_str(
-                              transcription_str, vocabulary, phones_number,
-                              phones_sequence));
-    for (i = 0; i < phones_sequence_length; i++)
+    CU_ASSERT_EQUAL_FATAL(phonemes_sequence_length, parse_transcription_str(
+                              transcription_str, vocabulary, phonemes_number,
+                              phonemes_sequence));
+    for (i = 0; i < phonemes_sequence_length; i++)
     {
-        CU_ASSERT_EQUAL(target_phones_sequence[i], phones_sequence[i]);
+        CU_ASSERT_EQUAL(target_phonemes_sequence[i], phonemes_sequence[i]);
     }
 }
 
 void parse_transcription_str_invalid_test_1()
 {
-    int phones_number = VOCABULARY_SIZE;
-    int phones_sequence[3];
+    int phonemes_number = VOCABULARY_SIZE;
+    int phonemes_sequence[3];
 
     CU_ASSERT_EQUAL_FATAL(0, parse_transcription_str(
-                              NULL, vocabulary, phones_number,
-                              phones_sequence));
+                              NULL, vocabulary, phonemes_number,
+                              phonemes_sequence));
     CU_ASSERT_EQUAL_FATAL(0, parse_transcription_str(
-                              transcription_str, NULL, phones_number,
-                              phones_sequence));
+                              transcription_str, NULL, phonemes_number,
+                              phonemes_sequence));
     CU_ASSERT_EQUAL_FATAL(0, parse_transcription_str(
                               transcription_str, vocabulary, 0,
-                              phones_sequence));
+                              phonemes_sequence));
     CU_ASSERT_EQUAL_FATAL(0, parse_transcription_str(
-                              transcription_str, vocabulary, phones_number,
+                              transcription_str, vocabulary, phonemes_number,
                               NULL));
 }

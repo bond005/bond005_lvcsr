@@ -55,16 +55,17 @@ enum TMLFParsingState {
  * \brief There are types of the words tree's nodes.
  */
 typedef enum _TWordsTreeNodeType {
-    INIT_NODE,  /**< The initial node (root node) of the words tree. */
-    PHONE_NODE, /**< The phone node of the words tree. */
-    WORD_NODE   /**< The word node (final node) of the words tree. */
+    INIT_NODE,   /**< The initial node (root node) of the words tree. */
+    PHONEME_NODE,/**< The phoneme node of the words tree. */
+    WORD_NODE    /**< The word node (final node) of the words tree. */
 } TWordsTreeNodeType;
 
 /*! \struct TWordsTreeNode
  * \brief Structure for representation of a words tree node. */
 typedef struct _TWordsTreeNode {
-    int node_data;                /**< Data of node: index of word of phone. */
-    TWordsTreeNodeType node_type; /**< Type of node^ initial node, phone node
+    int node_data;                /**< Data of node: index of word of
+                                       phoneme. */
+    TWordsTreeNodeType node_type; /**< Type of node^ initial node, phoneme node
                                        or word node (final node). */
     int number_of_next_nodes;          /**< Number of next nodes. */
     struct _TWordsTreeNode *next_nodes;/**< Array of pointers to next nodes. */
@@ -76,18 +77,31 @@ typedef struct _TWordsTreeNode {
  */
 typedef TWordsTreeNode* PWordsTreeNode;
 
+/*! \struct TLinearWordsLexicon
+ * \brief Structure for representation of one unit of the linear words lexicon.
+ * Such unit consists of the word's index and the sequence of phonemes indexes
+ * which describes transcription of the given word. The word's index is
+ * position of this word in the words vocabulary. The phonemes indexes define
+ * positions of corresponding phonemes in the phonemes vocabulary.
+ */
+typedef struct _TLinearWordsLexicon {
+    int word_index;
+    int phonemes_number;
+    int *phonemes_indexes;
+} TLinearWordsLexicon;
+
 /*! \struct TTranscriptionNode
  * \brief Structure for representation of one transcription node.
  *
  * The transcription node describes some acoustic event associated with
- * appearance of word or phone in speech. This description involves:
+ * appearance of word or phoneme in speech. This description involves:
  * - name of acoustic event;
  * - start time of this acoustic event;
  * - stop time of this acoustic event;
  * - event probability.
  */
 typedef struct _TTranscriptionNode {
-    int node_data;    /**< Data of node: index of word or phone. */
+    int node_data;    /**< Data of node: index of word or phoneme. */
     int start_time;   /**< Start time in 100ns units. */
     int end_time;     /**< End time in 100ns units. */
     float probability;/**< Probability of this acoustic event. */
@@ -123,15 +137,25 @@ typedef struct _TWordBigram {
     float probability;/**< Probability of bigram. */
 } TWordBigram;
 
-/*! \fn int load_phones_MLF(
- *         char *mlf_name, char **phones_vocabulary, int phones_number,
+/*! \struct TLanguageModel
+ * \brief Structure for representation of the language model.
+ */
+typedef struct _TLanguageModel {
+    int unigrams_number;          /**< Number of unigrams. */
+    float *unigrams_probabilities;/**< Probabilities of unigrams. */
+    int bigrams_number;           /**< Number of existable bigrams. */
+    TWordBigram *bigrams;         /**< Array of existable bigrams. */
+} TLanguageModel;
+
+/*! \fn int load_phonemes_MLF(
+ *         char *mlf_name, char **phonemes_vocabulary, int phonemes_number,
  *         TMLFFilePart **mlf_data);
  *
- * \brief This function loads MLF file describing phones transcriptions of some
- * speech signals. This MLF file must contain not only labels of acoustical
- * events (i.e. names of phones) but also start and end times of these events.
- * Besides, probabilities of these acoustical events can be present at the MLF
- * file.
+ * \brief This function loads MLF file describing phonemes transcriptions of
+ * some speech signals. This MLF file must contain not only labels of
+ * acoustical events (i.e. names of phonemes) but also start and end times of
+ * these events. Besides, probabilities of these acoustical events can be
+ * present at the MLF file.
  *
  * \details It is basic function of this library. This function uses such
  * additional functions of library as prepare_filename(), read_string() and
@@ -139,14 +163,15 @@ typedef struct _TWordBigram {
  *
  * \param mlf_name The name of source MLF file.
  *
- * \param phones_vocabulary The string array which represents phones vocabulary.
+ * \param phonemes_vocabulary The string array which represents phonemes
+ * vocabulary.
  *
- * \param phones_number The size of phones vocabulary.
+ * \param phonemes_number The size of phonemes vocabulary.
  *
  * \param mlf_data Pointer to array of MLF file's parts (one part of MLF file
- * involves name of the some label file and phones transcription containing in
- * this label file). Memory for this array will be allocated automatically in
- * this function.
+ * involves name of the some label file and phonemes transcription containing
+ * in this label file). Memory for this array will be allocated automatically
+ * in this function.
  *
  * \return If the loading has been completed successfully then this function
  * will return number of loaded parts of MLF file (i.e. size of loaded MLF data
@@ -154,8 +179,8 @@ typedef struct _TWordBigram {
  *
  * \sa prepare_filename(), read_string(), string_to_transcription_node().
  */
-int load_phones_MLF(char *mlf_name, char **phones_vocabulary,int phones_number,
-                    TMLFFilePart **mlf_data);
+int load_phonemes_MLF(char *mlf_name, char **phonemes_vocabulary,
+                      int phonemes_number, TMLFFilePart **mlf_data);
 
 /*! \fn int load_words_MLF(
  *         char *mlf_name, char **words_vocabulary, int words_number,
@@ -222,28 +247,29 @@ int load_words_MLF(char *mlf_name, char **words_vocabulary, int words_number,
 int save_words_MLF(char *mlf_name, char **words_vocabulary, int words_number,
                    TMLFFilePart *mlf_data, int files_number);
 
-/*! \fn int load_phones_vocabulary(char *file_name, char ***phones_vocabulary)
+/*! \fn int load_phonemes_vocabulary(char *file_name,
+ *         char ***phonemes_vocabulary)
  *
- * \brief This function loads phones vocabulary (i.e. list of phones) from the
- * given text file into the string array. The phones vocabulary is being sorted
- * automatically at loading.
+ * \brief This function loads phonemes vocabulary (i.e. list of phonemes) from
+ * the given text file into the string array. The phonemes vocabulary is being
+ * sorted automatically at loading.
  *
  * \details It is basic function of this library. This function uses such
  * additional functions of library as find_in_vocabulary() and read_string().
  *
- * \param file_name The name of text file with phones vocabulary which will be
- * loaded.
+ * \param file_name The name of text file with phonemes vocabulary which will
+ * be loaded.
  *
- * \param phones_vocabulary Pointer to string array in which the phones
+ * \param phonemes_vocabulary Pointer to string array in which the phonemes
  * vocabulary will be written. Memory for this string array will be allocated
  * automatically in this function.
  *
- * \return This function returns number of phones in case of successful
+ * \return This function returns number of phonemes in case of successful
  * loading, and it returns zero in case of loading error.
  *
  * \sa find_in_vocabulary(), read_string().
  */
-int load_phones_vocabulary(char *file_name, char ***phones_vocabulary);
+int load_phonemes_vocabulary(char *file_name, char ***phonemes_vocabulary);
 
 /*! \fn int load_words_vocabulary(char *file_name, char ***words_vocabulary)
  *
@@ -268,40 +294,109 @@ int load_phones_vocabulary(char *file_name, char ***phones_vocabulary);
  */
 int load_words_vocabulary(char *file_name, char ***words_vocabulary);
 
-/*! \fn int load_words_bigrams(
- *         char *file_name, char **words_vocabulary, int words_number,
- *         TWordBigram bigrams[], int bigrams_number)
+/*! \fn int load_language_model(
+ *         char *file_name, int words_number, TLanguageModel *language_model)
  *
- * \brief This function loads a bigrams list from the given text file into
- * the TWordBigram array. The bigrams list is being sorted automatically at
+ * \brief This function loads a language model from the given binary file into
+ * the TLanguageModel struct. Loaded language model consists of unigrams array
+ * and bigrams array. The bigrams array is being sorted automatically at
  * loading.
  *
- * \details It is basic function of this library. This function uses such
- * additional functions of library as find_in_bigrams_list(), read_string() and
- * string_to_bigram().
+ * \details It is basic function of this library. This function doesn't use any
+ * additional function of this library.
  *
- * \param file_name The name of text file with bigrams list. Each line of this
- * file describes one bigram in the following way: name of first word, name of
- * second word and bigram probability by way of spaces.
- *
- * \param words_vocabulary The string array which represents words vocabulary.
+ * \param file_name The name of binary file with language model. First 4 bytes
+ * represent integer value which determines number of unigrams, i.e. words.
+ * Each next 4 bytes represent float value which determines probability of
+ * corresponding unigram. After ending of unigrams array the next 4 bytes
+ * represent number of bigrams. Each next 12 bytes represent TWordBigram
+ * structure which describes corresponding bigram in the following way:
+ * vocabulary index of first word, vocabulary index of second word and bigram
+ * probability.
  *
  * \param words_number The size of words vocabulary.
  *
- * \param bigrams Pointer to TWordBigram array in which the loaded bigrams list
- * will be written. Memory for this array will be allocated automatically in
- * this function.
+ * \param language_model Pointer to TLanguageModel structure in which the
+ * loaded unigrams and bigrams arrays will be written. Memory for these arrays
+ * will be allocated automatically in this function.
  *
- * \return This function returns number of bigrams in case of successful
- * loading, and it returns zero in case of loading error.
- *
- * \sa find_in_bigrams_list(), read_string(), string_to_bigram().
+ * \return This function returns 1 in case of successful loading, and it
+ * returns 0 in case of loading error.
  */
-int load_words_bigrams(char *file_name, char **words_vocabulary,
-                       int words_number, TWordBigram *bigrams[]);
+int load_language_model(char *file_name, int words_number,
+                        TLanguageModel *language_model);
+
+/*! \fn int save_language_model(
+ *         char *file_name, TLanguageModel language_model)
+ *
+ * \brief This function saves a language model into the given binary file.
+ *
+ * \details It is basic function of this library. This function doesn't use any
+ * additional function of this library.
+ *
+ * \param file_name The name of binary file with language model. First 4 bytes
+ * represent integer value which determines number of unigrams, i.e. words.
+ * Each next 4 bytes represent float value which determines probability of
+ * corresponding unigram. After ending of unigrams array the next 4 bytes
+ * represent number of bigrams. Each next 12 bytes represent TWordBigram
+ * structure which describes corresponding bigram in the following way:
+ * vocabulary index of first word, vocabulary index of second word and bigram
+ * probability.
+ *
+ * \param language_model The TLanguageModel structure with the saved unigrams
+ * and bigrams arrays.
+ *
+ * \return This function returns 1 in case of successful saving, and it
+ * returns 0 in case of saving error.
+ */
+int save_language_model(char *file_name, TLanguageModel language_model);
+
+/*! \fn int calculate_language_model(
+ *         TMLFFilePart *words_mlf_data, int files_number, int words_number,
+ *         float lambda, float eps, TLanguageModel *language_model)
+ *
+ * \brief This function calculates language model (unigrams and bigrams) on
+ * basis of the given MLF data containing words transcriptions. Each words
+ * transcription is considered as the separate text. The collection of such
+ * texts is used for creation of language model.
+ *
+ * \details It is basic function of this library. This function doesn't use any
+ * additional function of this library.
+ *
+ * For bigrams smoothing the Deleted Interpolation Smoothing algorithm will be
+ * used.
+ *
+ * \param mlf_data The TMLFFilePart array representing the MLF data which will
+ * be used for calculation of language model. Each item of this array describes
+ * the corresponding labels file involving the name and the words
+ * transcription.
+ *
+ * \param files_number The size of TMLFFilePart array, i.e. number of labels
+ * files of which the MLF file will consist.
+ *
+ * \param words_number The size of words vocabulary.
+ *
+ * \param lambda The coefficient which is used in the smoothing algorithm.
+ * Value of this coefficient must be more or equal 0, and less or equal 1.
+ *
+ * \param eps The bottom threshold of bigram probability. All bigrams whose
+ * probabilities is less than this threshold will not take part in language
+ * model. Value of this threshold must be more or equal 0, and less 1.
+ *
+ * \param language_model Pointer to the TLanguageModel structure representing
+ * the language model which consists of unigrams array and bigrams array. These
+ * arrays will be calculated. Memory for these arrays will be allocated
+ * automatically in this function.
+ *
+ * \return This function returns 1 in case of successful canglculati, and it
+ * returns 0 in case of error.
+ */
+int calculate_language_model(TMLFFilePart *words_mlf_data, int files_number,
+                             int words_number, float lambda, float eps,
+                             TLanguageModel *language_model);
 
 /*! \fn int create_words_vocabulary_tree(
- *         char *file_name, char **phones_vocabulary, int phones_number,
+ *         char *file_name, char **phonemes_vocabulary, int phonemes_number,
  *         char **words_vocabulary, int words_number,
  *         PWordsTreeNode* root_node)
  *
@@ -317,10 +412,10 @@ int load_words_bigrams(char *file_name, char **words_vocabulary,
  * \param file_name The name of text file with words vocabulary which will be
  * loaded (this file describes vocabulary words and their transcriptions).
  *
- * \param phones_vocabulary The sorted string array which contains names of
- * recognized phones.
+ * \param phonemes_vocabulary The sorted string array which contains names of
+ * recognized phonemes.
  *
- * \param phones_number The size of phones vocabulary.
+ * \param phonemes_number The size of phonemes vocabulary.
  *
  * \param words_vocabulary The sorted string array which contains names of
  * recognized words.
@@ -332,7 +427,7 @@ int load_words_bigrams(char *file_name, char **words_vocabulary,
  * NULL in case of error.
  */
 PWordsTreeNode create_words_vocabulary_tree(
-        char *file_name, char **phones_vocabulary, int phones_number,
+        char *file_name, char **phonemes_vocabulary, int phonemes_number,
         char **words_vocabulary, int words_number);
 
 /*! \fn int word_exists_in_words_tree(int word_index,
@@ -352,6 +447,45 @@ PWordsTreeNode create_words_vocabulary_tree(
  * returns 0 in case of nonexistence of checked word or any error.
  */
 int word_exists_in_words_tree(int word_index, PWordsTreeNode words_tree_root);
+
+/*! \fn int create_linear_words_lexicon(
+ *         char *file_name, char **phonemes_vocabulary, int phonemes_number,
+ *         char **words_vocabulary, int words_number,
+ *         TLinearWordsLexicon **linear_words_lexicon)
+ *
+ * \brief This function loads information about words and their transcriptions
+ * from the given text file and creates a new linear words lexicon on basis on
+ * this information.
+ *
+ * \details It is basic function of this library. This function uses such
+ * additional functions of library as find_in_vocabulary(),
+ * parse_transcription_str(), read_string() and
+ * select_word_and_transcription().
+ *
+ * \param file_name The name of text file with words vocabulary which will be
+ * loaded (this file describes vocabulary words and their transcriptions).
+ *
+ * \param phonemes_vocabulary The sorted string array which contains names of
+ * recognized phonemes.
+ *
+ * \param phonemes_number The size of phonemes vocabulary.
+ *
+ * \param words_vocabulary The sorted string array which contains names of
+ * recognized words.
+ *
+ * \param words_number The size of words vocabulary.
+ *
+ * \param linear_words_lexicon Pointer to the TLinearWordsLexicon array
+ * defining the linear words lexicon which will be created. Memory for this
+ * array will be allocated automatically in this function.
+ *
+ * \return This function returns size of created linear words lexicon in case
+ * of successful creating, or it returns 0 in case of error.
+ */
+int create_linear_words_lexicon(
+        char *file_name, char **phonemes_vocabulary, int phonemes_number,
+        char **words_vocabulary, int words_number,
+        TLinearWordsLexicon **linear_words_lexicon);
 
 /*! \fn void free_MLF(TMLFFilePart **mlf_data, int number_of_MLF_parts)
  *
@@ -395,17 +529,54 @@ void free_words_tree(PWordsTreeNode* root_node);
  */
 void free_string_array(char ***string_array, int array_size);
 
+/*! \fn void free_language_model(TLanguageModel *language_model)
+ *
+ * \brief This function frees memory which was allocated for the given language
+ * model, in particular, unigrams and bigrams arrays.
+ *
+ * \details It is basic function of this library. This function doesn't use any
+ * additional function of this library.
+ *
+ * \param language_model Pointer to the TLanguageModel structure which
+ * represents the deletable language model.
+ */
+void free_language_model(TLanguageModel *language_model);
+
+/*! \fn float get_bigram_probability(
+ *         TLanguageModel language_model, int start_word_ind, int end_word_ind)
+ *
+ * \brief This function gets the bigram probability on basis of vocabulary's
+ * indexes of first and second word in this bigram.
+ *
+ * \details It is basic function of this library. This function doesn't use any
+ * additional function of this library.
+ *
+ * \param language_model The TLanguageModel structure which represents the
+ * language model consisting of the unigrams array and the bigrams array. The
+ * bigrams array must be ordered by increase of vocabulary's indexes.
+ *
+ * \param start_word_ind The vocabulary's index of first word in the bigram.
+ *
+ * \param end_word_ind The vocabulary's index of second word in the bigram.
+ *
+ * \return This function returns the bigram probability in case of the
+ * corresponding bigram's existence, or it returns 0.0 in case of this bigram's
+ * nonexistence.
+ */
+float get_bigram_probability(TLanguageModel language_model, int start_word_ind,
+                             int end_word_ind);
+
 /*! \fn int recognize_words(
- *         PTranscriptionNode source_phones_transcription,
+ *         PTranscriptionNode source_phonemes_transcription,
  *         PWordsTreeNode words_tree, TWordBigram bigrams[],int bigrams_number,
  *         PTranscriptionNode *recognized_words)
  *
- * \brief This function recognizes all words in the source phones sequence
+ * \brief This function recognizes all words in the source phonemes sequence
  * using the words tree and the bigrams list.
  *
- * \param source_phones_transcription The source phones transcription which will
- * be recognized. As result of this recognition the words transcription will be
- * generated.
+ * \param source_phonemes_transcription The source phones transcription which
+ * will be recognized. As result of this recognition the words transcription
+ * will be generated.
  *
  * \param words_tree The root of words tree which describes standard phonetic
  * transcriptions of all words.
@@ -423,7 +594,7 @@ void free_string_array(char ***string_array, int array_size);
  * of successful recognizing, or it returns -1 in case of error.
  */
 int recognize_words(
-        PTranscriptionNode source_phones_transcription,
+        PTranscriptionNode source_phonemes_transcription,
         PWordsTreeNode words_tree, TWordBigram bigrams[], int bigrams_number,
         PTranscriptionNode *recognized_words);
 
@@ -434,8 +605,8 @@ int recognize_words(
  * characters).
  *
  * \details It is additional function of this library. This function is used in
- * such functions of library as load_phones_MLF(), load_phones_vocabulary(),
- * load_words_bigrams(), load_words_MLF() and load_words_vocabulary().
+ * such functions of library as load_phonemes_MLF(),load_phonemes_vocabulary(),
+ * load_words_MLF() and load_words_vocabulary().
  *
  * \param read_file Handle of text file.
  *
@@ -445,8 +616,8 @@ int recognize_words(
  * \return This function returns length of line which has been read. In case of
  * error this function returns zero.
  *
- * \sa load_phones_MLF(), load_phones_vocabulary(), load_words_bigrams(),
- * load_words_MLF(), load_words_vocabulary().
+ * \sa load_phonemes_MLF(), load_phonemes_vocabulary(), load_words_MLF(),
+ * load_words_vocabulary().
  */
 int read_string(FILE *read_file, char *str);
 
@@ -456,7 +627,7 @@ int read_string(FILE *read_file, char *str);
  * Preparing consists in deletion of initial and final quotes.
  *
  * \details It is additional function of this library. This function is used in
- * such functions of library as load_phones_MLF() and load_words_MLF().
+ * such functions of library as load_phonemes_MLF() and load_words_MLF().
  *
  * \param filename The prepared file name which will be rewritten. It must not
  * be constant!
@@ -464,7 +635,7 @@ int read_string(FILE *read_file, char *str);
  * \return In case of successful preparing this function returns new length of
  * prepared file name. In case of error this function returns zero.
  *
- * \sa load_phones_MLF(), load_words_MLF().
+ * \sa load_phonemes_MLF(), load_words_MLF().
  */
 int prepare_filename(char *filename);
 
@@ -472,12 +643,12 @@ int prepare_filename(char *filename);
  *         char *vocabulary[], int vocabulary_size, char *found_name,
  *         int *is_equal)
  *
- * \brief This function finds the specified node (word or phone) in sorted
+ * \brief This function finds the specified node (word or phoneme) in sorted
  * vocabulary. If sought node isn't contained in vocabulary, then function
  * finds the most similar node.
  *
  * \details It is additional function of this library. This function is used in
- * such functions of library as load_phones_vocabulary(), load_words_MLF(),
+ * such functions of library as load_phonemes_vocabulary(), load_words_MLF(),
  * load_words_vocabulary(), string_to_bigram() and
  * string_to_transcription_node().
  *
@@ -494,7 +665,7 @@ int prepare_filename(char *filename);
  * \result This function returns index of found node in vocabulary in case of
  * successful completion of search, or it returns -1 in case of error.
  *
- * \sa load_phones_vocabulary(), load_words_MLF(), load_words_vocabulary(),
+ * \sa load_phonemes_vocabulary(), load_words_MLF(), load_words_vocabulary(),
  * string_to_bigram(), string_to_transcription_node().
  */
 int find_in_vocabulary(char *vocabulary[], int vocabulary_size,
@@ -508,12 +679,12 @@ int find_in_vocabulary(char *vocabulary[], int vocabulary_size,
  * TTranscriptionNode structure.
  *
  * \details It is additional function of this library. This function is used in
- * such function of library as load_phones_MLF().
+ * such function of library as load_phonemes_MLF().
  *
  * \param str The source string.
  *
- * \param vocabulary The vocabulary of words or phones which is sorted by items
- * names.
+ * \param vocabulary The vocabulary of words or phonemes which is sorted by
+ * items names.
  *
  * \param vocabulary_size Size of vocabulary.
  *
@@ -523,67 +694,11 @@ int find_in_vocabulary(char *vocabulary[], int vocabulary_size,
  * \return If source string correctly describes the transcription node, then
  * this function returns 1. Else, this function returns 0.
  *
- * \sa load_phones_MLF().
+ * \sa load_phonemes_MLF().
  */
 int string_to_transcription_node(char *str,
                                  char *vocabulary[], int vocabulary_size,
                                  PTranscriptionNode node);
-
-/*! \fn int string_to_bigram(
- *         char *str, char *words_vocabulary[], int words_number,
- *         TWordBigram *bigram)
- *
- * \brief This function parses source string and converts it to the TWordBigram
- * structure.
- *
- * \details It is additional function of this library. This function is used in
- * such function of library as load_words_bigrams().
- *
- * \param str The source string.
- *
- * \param words_vocabulary The words vocabulary which is sorted by words names.
- *
- * \param words_number Size of words vocabulary.
- *
- * \param Pointer to the TWordBigram structure in which information about
- * bigram will be written.
- *
- * \return If source string correctly describes the bigram, then this function
- * returns 1. Else, this function returns 0.
- *
- * \sa load_words_bigrams().
- */
-int string_to_bigram(char *str, char *words_vocabulary[], int words_number,
-                     TWordBigram *bigram);
-
-/*! \fn int find_in_bigrams_list(
- *         TWordBigram bigrams[], int bigrams_number, TWordBigram found_bigram,
- *         int *is_equal)
- *
- * \brief This function finds the specified bigram in sorted bigrams list.
- * If sought bigram isn't contained in vocabulary, then function finds the most
- * similar node.
- *
- * \details It is additional function of this library. This function is used in
- * such function of library as load_words_bigrams().
- *
- * \param bigrams Sorted TWordBigram array which represents the bigrams list in
- * which search will be realized.
- *
- * \param bigrams_number Size of the sorted TWordBigram array.
- *
- * \param found_bigram The bigram which must be found.
- *
- * \param is_equal Pointer to integer flag which defines the search result
- * (1 - exact coincidence, 0 - the most similar).
- *
- * \result This function returns index of bigram in the bigrams list in case of
- * successful completion of search, or it returns -1 in case of error.
- *
- * \sa load_words_bigrams().
- */
-int find_in_bigrams_list(TWordBigram bigrams[], int bigrams_number,
-                         TWordBigram found_bigram, int *is_equal);
 
 /*! \fn int select_word_and_transcription(
  *         char *str, char **word_substr, char **transcription_substr)
@@ -614,11 +729,12 @@ int select_word_and_transcription(char *str, char **word_substr,
                                   char **transcription_substr);
 
 /*! \fn int parse_transcription_str(
- *         char *transcription_str, char **phones_vocabulary,int phones_number,
- *         int phones_sequence[])
+ *         char *transcription_str, char **phonemes_vocabulary,
+ *         int phonemes_number, int phonemes_sequence[])
  *
  * \brief This function parses string description of phonetic transcription and
- * creates the sequence of phones indexes according to the phones vocabulary.
+ * creates the sequence of phonemes indexes according to the phonemes
+ * vocabulary.
  *
  * \details It is additional function of this library. This function is used in
  * such function of library as create_words_vocabulary_tree().
@@ -626,38 +742,38 @@ int select_word_and_transcription(char *str, char **word_substr,
  * \param transcription_str The source string description of phonetic
  * transcription.
  *
- * \param phones_vocabulary The sorted string array which contains names of
- * recognized phones.
+ * \param phonemes_vocabulary The sorted string array which contains names of
+ * recognized phonemes.
  *
- * \param phones_number The size of phones vocabulary.
+ * \param phonemes_number The size of phonemes vocabulary.
  *
- * \phones_sequence The integer array into which the sequence of phones indexes
- * will be written. The memory for this array must be allocated before call of
- * this function.
+ * \phonemes_sequence The integer array into which the sequence of phonemes
+ * indexes will be written. The memory for this array must be allocated before
+ * call of this function.
  *
  * \return In case of success this function returns length of created sequence
- * of phones indexes, and in case of error it returns zero.
+ * of phonemes indexes, and in case of error it returns zero.
  *
  * \sa create_words_vocabulary_tree().
  */
-int parse_transcription_str(char *transcription_str, char **phones_vocabulary,
-                            int phones_number, int phones_sequence[]);
+int parse_transcription_str(char *transcription_str,char **phonemes_vocabulary,
+                            int phonemes_number, int phonemes_sequence[]);
 
 /*! \fn int add_word_to_words_tree(
- *         int word_index, int word_phones[], int word_length,
+ *         int word_index, int word_phonemes[], int word_length,
  *         PWordsTreeNode words_tree_root)
  *
  * \brief This function adds new word to the words tree. Added word is
  * specified by its index in the words vocabulary and its phonetic
  * transcription. By-turn, the phonetic transcription is described by sequence
- * of phones indexes in the phones vocabulary.
+ * of phonemes indexes in the phonemes vocabulary.
  *
  * \details It is additional function of this library. This function is used in
  * such function of library as create_words_vocabulary_tree().
  *
  * \param word_index The index of added word in the words vocabulary.
  *
- * \param word_phones The sequence of phones indexes which describes the
+ * \param word_phonemes The sequence of phonemes indexes which describes the
  * phonetic transcription of added word.
  *
  * \param word_length The length of phonetic transcription of added word.
@@ -670,7 +786,7 @@ int parse_transcription_str(char *transcription_str, char **phones_vocabulary,
  *
  * \sa create_words_vocabulary_tree().
  */
-int add_word_to_words_tree(int word_index, int word_phones[], int word_length,
+int add_word_to_words_tree(int word_index, int word_phonemes[],int word_length,
                            PWordsTreeNode words_tree_root);
 
 /*! \fn void free_words_tree_node(PWordsTreeNode deleted_node)

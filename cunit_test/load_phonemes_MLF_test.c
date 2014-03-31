@@ -7,7 +7,7 @@
 #include <CUnit/CUnit.h>
 
 #include "../bond005_lvcsr_lib.h"
-#include "load_phones_MLF_test.h"
+#include "load_phonemes_MLF_test.h"
 
 #define VOCABULARY_SIZE 10
 
@@ -20,16 +20,16 @@ static char *name_of_incorrect_MLF_file_5 = "incorrect_data5.mlf";
 static char *name_of_incorrect_MLF_file_6 = "incorrect_data6.mlf";
 static TMLFFilePart *target_MLF = NULL;
 static int target_MLF_size = 3;
-static char *phones_vocabulary[VOCABULARY_SIZE];
+static char *phonemes_vocabulary[VOCABULARY_SIZE];
 
-static void create_phones_vocabulary()
+static void create_phonemes_vocabulary()
 {
     int i;
     for (i = 0; i < VOCABULARY_SIZE; i++)
     {
-        phones_vocabulary[i] = malloc(2 * sizeof(char));
-        phones_vocabulary[i][0] = (char)((int)'a' + i);
-        phones_vocabulary[i][1] = 0;
+        phonemes_vocabulary[i] = malloc(2 * sizeof(char));
+        phonemes_vocabulary[i][0] = (char)((int)'a' + i);
+        phonemes_vocabulary[i][1] = 0;
     }
 }
 
@@ -104,7 +104,7 @@ static int create_MLF_file_by_target_data(char *filename)
 {
     int i, j, n, res = 0;
     FILE *MLF_file_handle = NULL;
-    char *phone_name;
+    char *phoneme_name;
     TTranscriptionNode cur_node;
 
     MLF_file_handle = fopen(filename, "w");
@@ -126,9 +126,10 @@ static int create_MLF_file_by_target_data(char *filename)
             for (j = 0; j < n; j++)
             {
                 cur_node = target_MLF[i].transcription[j];
-                phone_name = phones_vocabulary[cur_node.node_data];
+                phoneme_name = phonemes_vocabulary[cur_node.node_data];
                 if (fprintf(MLF_file_handle, " %d \t %d  %s  ",
-                            cur_node.start_time, cur_node.end_time, phone_name) <= 0)
+                            cur_node.start_time, cur_node.end_time,
+                            phoneme_name) <= 0)
                 {
                     res = 0;
                     break;
@@ -223,7 +224,7 @@ static int create_incorrect_MLF_file_2()
         {
             if (fprintf(MLF_file_handle, "%d %d %s %12.10f\n",
                         transcription[i].start_time, transcription[i].end_time,
-                        phones_vocabulary[transcription[i].node_data],
+                        phonemes_vocabulary[transcription[i].node_data],
                         transcription[i].probability) <= 0)
             {
                 res = 0;
@@ -271,7 +272,7 @@ static int create_incorrect_MLF_file_3()
         {
             if (fprintf(MLF_file_handle, "%d %d %s %12.10f\n",
                         transcription[i].start_time, transcription[i].end_time,
-                        phones_vocabulary[transcription[i].node_data],
+                        phonemes_vocabulary[transcription[i].node_data],
                         transcription[i].probability) <= 0)
             {
                 res = 0;
@@ -318,7 +319,7 @@ static int create_incorrect_MLF_file_4()
         {
             if (fprintf(MLF_file_handle, "%d %d %s %12.10f\n",
                         transcription[i].start_time, transcription[i].end_time,
-                        phones_vocabulary[transcription[i].node_data],
+                        phonemes_vocabulary[transcription[i].node_data],
                         transcription[i].probability) <= 0)
             {
                 res = 0;
@@ -343,8 +344,8 @@ static int create_incorrect_MLF_file_5()
     int i, res = 0, transcription_size = 0;
     FILE *MLF_file_handle = NULL;
     char *transcription_name = "incorrect_transcription.lab";
-    char *incorrect_phone = "abc";
-    char *cur_phone;
+    char *incorrect_phoneme = "abc";
+    char *cur_phoneme;
     PTranscriptionNode transcription = NULL;
 
     if (!create_MLF_file_by_target_data(name_of_incorrect_MLF_file_5))
@@ -367,15 +368,15 @@ static int create_incorrect_MLF_file_5()
         {
             if (transcription[i].node_data < VOCABULARY_SIZE)
             {
-                cur_phone = phones_vocabulary[transcription[i].node_data];
+                cur_phoneme = phonemes_vocabulary[transcription[i].node_data];
             }
             else
             {
-                cur_phone = incorrect_phone;
+                cur_phoneme = incorrect_phoneme;
             }
             if (fprintf(MLF_file_handle, "%d %d %s %12.10f\n",
                         transcription[i].start_time, transcription[i].end_time,
-                        cur_phone, transcription[i].probability) <= 0)
+                        cur_phoneme, transcription[i].probability) <= 0)
             {
                 res = 0;
                 break;
@@ -399,7 +400,7 @@ static int create_incorrect_MLF_file_6()
     int i, res = 0, transcription_size = 0;
     FILE *MLF_file_handle = NULL;
     char *transcription_name = "incorrect_transcription.lab";
-    char *cur_phone;
+    char *cur_phoneme;
     PTranscriptionNode transcription = NULL;
 
     if (!create_MLF_file_by_target_data(name_of_incorrect_MLF_file_6))
@@ -417,10 +418,10 @@ static int create_incorrect_MLF_file_6()
         res = 1;
         for (i = 0; i < transcription_size; i++)
         {
-            cur_phone = phones_vocabulary[transcription[i].node_data];
+            cur_phoneme = phonemes_vocabulary[transcription[i].node_data];
             if (fprintf(MLF_file_handle, "%d %d %s %12.10f\n",
                         transcription[i].start_time, transcription[i].end_time,
-                        cur_phone, transcription[i].probability) <= 0)
+                        cur_phoneme, transcription[i].probability) <= 0)
             {
                 res = 0;
                 break;
@@ -515,13 +516,13 @@ static int compare_two_MLF(TMLFFilePart *mlf1, int mlf1_size,
     return res;
 }
 
-int prepare_for_testing_of_load_phones_MLF()
+int prepare_for_testing_of_load_phonemes_MLF()
 {
     CU_pSuite pSuite = NULL;
 
-    pSuite = CU_add_suite("Test suite for load_phones_MLF()",
-                          init_suite_load_phones_MLF,
-                          clean_suite_load_phones_MLF);
+    pSuite = CU_add_suite("Test suite for load_phonemes_MLF()",
+                          init_suite_load_phonemes_MLF,
+                          clean_suite_load_phonemes_MLF);
     if (NULL == pSuite)
     {
         CU_cleanup_registry();
@@ -529,21 +530,21 @@ int prepare_for_testing_of_load_phones_MLF()
     }
 
     if ((NULL == CU_add_test(pSuite, "Valid partition 1",
-                             load_phones_MLF_valid_test_1))
+                             load_phonemes_MLF_valid_test_1))
             || (NULL == CU_add_test(pSuite, "Valid partition 2",
-                                    load_phones_MLF_valid_test_2))
+                                    load_phonemes_MLF_valid_test_2))
             || (NULL == CU_add_test(pSuite, "Valid partition 3",
-                                    load_phones_MLF_valid_test_3))
+                                    load_phonemes_MLF_valid_test_3))
             || (NULL == CU_add_test(pSuite, "Valid partition 4",
-                                    load_phones_MLF_valid_test_4))
+                                    load_phonemes_MLF_valid_test_4))
             || (NULL == CU_add_test(pSuite, "Valid partition 5",
-                                    load_phones_MLF_valid_test_5))
+                                    load_phonemes_MLF_valid_test_5))
             || (NULL == CU_add_test(pSuite, "Valid partition 6",
-                                    load_phones_MLF_valid_test_6))
+                                    load_phonemes_MLF_valid_test_6))
             || (NULL == CU_add_test(pSuite, "Valid partition 7",
-                                    load_phones_MLF_valid_test_7))
+                                    load_phonemes_MLF_valid_test_7))
             || (NULL == CU_add_test(pSuite, "Invalid partitions",
-                                    load_phones_MLF_invalid_test_1)))
+                                    load_phonemes_MLF_invalid_test_1)))
     {
         CU_cleanup_registry();
         return 0;
@@ -552,9 +553,9 @@ int prepare_for_testing_of_load_phones_MLF()
     return 1;
 }
 
-int init_suite_load_phones_MLF()
+int init_suite_load_phonemes_MLF()
 {
-    create_phones_vocabulary();
+    create_phonemes_vocabulary();
     create_target_MLF();
     if (create_correct_MLF_file() && create_incorrect_MLF_file_1()
             && create_incorrect_MLF_file_2() && create_incorrect_MLF_file_3()
@@ -566,15 +567,15 @@ int init_suite_load_phones_MLF()
     return -1;
 }
 
-int clean_suite_load_phones_MLF()
+int clean_suite_load_phonemes_MLF()
 {
     int i;
     for (i = 0; i < VOCABULARY_SIZE; i++)
     {
-        if (phones_vocabulary[i] != NULL)
+        if (phonemes_vocabulary[i] != NULL)
         {
-            free(phones_vocabulary[i]);
-            phones_vocabulary[i] = NULL;
+            free(phonemes_vocabulary[i]);
+            phonemes_vocabulary[i] = NULL;
         }
     }
     free_MLF(&target_MLF, target_MLF_size);
@@ -588,13 +589,13 @@ int clean_suite_load_phones_MLF()
     return 0;
 }
 
-void load_phones_MLF_valid_test_1()
+void load_phonemes_MLF_valid_test_1()
 {
     TMLFFilePart *data = NULL;
     int data_size = 0, MLF_are_same = 1;
 
-    data_size = load_phones_MLF(name_of_correct_MLF_file, phones_vocabulary,
-                                VOCABULARY_SIZE, &data);
+    data_size = load_phonemes_MLF(name_of_correct_MLF_file,phonemes_vocabulary,
+                                  VOCABULARY_SIZE, &data);
     MLF_are_same = compare_two_MLF(target_MLF,target_MLF_size, data,data_size);
     free_MLF(&data, data_size);
 
@@ -602,13 +603,13 @@ void load_phones_MLF_valid_test_1()
     CU_ASSERT_TRUE_FATAL(MLF_are_same);
 }
 
-void load_phones_MLF_valid_test_2()
+void load_phonemes_MLF_valid_test_2()
 {
     TMLFFilePart *data = NULL;
     int data_size = 0, is_null = 0;
 
-    data_size = load_phones_MLF(name_of_incorrect_MLF_file_1,
-                                phones_vocabulary, VOCABULARY_SIZE, &data);
+    data_size = load_phonemes_MLF(name_of_incorrect_MLF_file_1,
+                                  phonemes_vocabulary, VOCABULARY_SIZE, &data);
     is_null = (data == NULL);
     free_MLF(&data, data_size);
 
@@ -616,13 +617,13 @@ void load_phones_MLF_valid_test_2()
     CU_ASSERT_TRUE_FATAL(is_null);
 }
 
-void load_phones_MLF_valid_test_3()
+void load_phonemes_MLF_valid_test_3()
 {
     TMLFFilePart *data = NULL;
     int data_size = 0, is_null = 0;
 
-    data_size = load_phones_MLF(name_of_incorrect_MLF_file_2,
-                                phones_vocabulary, VOCABULARY_SIZE, &data);
+    data_size = load_phonemes_MLF(name_of_incorrect_MLF_file_2,
+                                  phonemes_vocabulary, VOCABULARY_SIZE, &data);
     is_null = (data == NULL);
     free_MLF(&data, data_size);
 
@@ -630,13 +631,13 @@ void load_phones_MLF_valid_test_3()
     CU_ASSERT_TRUE_FATAL(is_null);
 }
 
-void load_phones_MLF_valid_test_4()
+void load_phonemes_MLF_valid_test_4()
 {
     TMLFFilePart *data = NULL;
     int data_size = 0, is_null = 0;
 
-    data_size = load_phones_MLF(name_of_incorrect_MLF_file_3,
-                                phones_vocabulary, VOCABULARY_SIZE, &data);
+    data_size = load_phonemes_MLF(name_of_incorrect_MLF_file_3,
+                                  phonemes_vocabulary, VOCABULARY_SIZE, &data);
     is_null = (data == NULL);
     free_MLF(&data, data_size);
 
@@ -644,13 +645,13 @@ void load_phones_MLF_valid_test_4()
     CU_ASSERT_TRUE_FATAL(is_null);
 }
 
-void load_phones_MLF_valid_test_5()
+void load_phonemes_MLF_valid_test_5()
 {
     TMLFFilePart *data = NULL;
     int data_size = 0, is_null = 0;
 
-    data_size = load_phones_MLF(name_of_incorrect_MLF_file_4,
-                                phones_vocabulary, VOCABULARY_SIZE, &data);
+    data_size = load_phonemes_MLF(name_of_incorrect_MLF_file_4,
+                                  phonemes_vocabulary, VOCABULARY_SIZE, &data);
     is_null = (data == NULL);
     free_MLF(&data, data_size);
 
@@ -658,13 +659,13 @@ void load_phones_MLF_valid_test_5()
     CU_ASSERT_TRUE_FATAL(is_null);
 }
 
-void load_phones_MLF_valid_test_6()
+void load_phonemes_MLF_valid_test_6()
 {
     TMLFFilePart *data = NULL;
     int data_size = 0, is_null = 0;
 
-    data_size = load_phones_MLF(name_of_incorrect_MLF_file_5,
-                                phones_vocabulary, VOCABULARY_SIZE, &data);
+    data_size = load_phonemes_MLF(name_of_incorrect_MLF_file_5,
+                                  phonemes_vocabulary, VOCABULARY_SIZE, &data);
     is_null = (data == NULL);
     free_MLF(&data, data_size);
 
@@ -672,13 +673,13 @@ void load_phones_MLF_valid_test_6()
     CU_ASSERT_TRUE_FATAL(is_null);
 }
 
-void load_phones_MLF_valid_test_7()
+void load_phonemes_MLF_valid_test_7()
 {
     TMLFFilePart *data = NULL;
     int data_size = 0, is_null = 0;
 
-    data_size = load_phones_MLF(name_of_incorrect_MLF_file_6,
-                                phones_vocabulary, VOCABULARY_SIZE, &data);
+    data_size = load_phonemes_MLF(name_of_incorrect_MLF_file_6,
+                                  phonemes_vocabulary, VOCABULARY_SIZE, &data);
     is_null = (data == NULL);
     free_MLF(&data, data_size);
 
@@ -686,33 +687,33 @@ void load_phones_MLF_valid_test_7()
     CU_ASSERT_TRUE_FATAL(is_null);
 }
 
-void load_phones_MLF_invalid_test_1()
+void load_phonemes_MLF_invalid_test_1()
 {
     TMLFFilePart *data = NULL;
     int data_size = 0, is_null = 0;
 
-    data_size = load_phones_MLF(NULL, phones_vocabulary, VOCABULARY_SIZE,
-                                &data);
+    data_size = load_phonemes_MLF(NULL, phonemes_vocabulary, VOCABULARY_SIZE,
+                                  &data);
     is_null = (data == NULL);
     free_MLF(&data, data_size);
     CU_ASSERT_EQUAL_FATAL(0, data_size);
     CU_ASSERT_TRUE_FATAL(is_null);
 
-    data_size = load_phones_MLF(name_of_correct_MLF_file,
-                                NULL, VOCABULARY_SIZE, &data);
+    data_size = load_phonemes_MLF(name_of_correct_MLF_file,
+                                  NULL, VOCABULARY_SIZE, &data);
     is_null = (data == NULL);
     free_MLF(&data, data_size);
     CU_ASSERT_EQUAL_FATAL(0, data_size);
     CU_ASSERT_TRUE_FATAL(is_null);
 
-    data_size = load_phones_MLF(name_of_correct_MLF_file,
-                                phones_vocabulary, 0, &data);
+    data_size = load_phonemes_MLF(name_of_correct_MLF_file,
+                                  phonemes_vocabulary, 0, &data);
     is_null = (data == NULL);
     free_MLF(&data, data_size);
     CU_ASSERT_EQUAL_FATAL(0, data_size);
     CU_ASSERT_TRUE_FATAL(is_null);
 
-    data_size = load_phones_MLF(name_of_correct_MLF_file,
-                                phones_vocabulary, VOCABULARY_SIZE, NULL);
+    data_size = load_phonemes_MLF(name_of_correct_MLF_file,
+                                  phonemes_vocabulary, VOCABULARY_SIZE, NULL);
     CU_ASSERT_EQUAL_FATAL(0, data_size);
 }
