@@ -1242,6 +1242,7 @@ int calculate_language_model(TMLFFilePart *words_mlf_data, int files_number,
     language_model->unigrams_probabilities = malloc(words_number
                                                     * sizeof(float));
     words_frequencies = malloc(words_number * sizeof(int));
+    memset(words_frequencies, 0, words_number * sizeof(int));
     language_model->bigrams_number = 0;
     language_model->bigrams = NULL;
 
@@ -1311,18 +1312,19 @@ int calculate_language_model(TMLFFilePart *words_mlf_data, int files_number,
                     / (float)words_frequencies[start_word_ind];
             bigram_probability = lambda * bigram_probability + (1.0 - lambda)
                     * language_model->unigrams_probabilities[end_word_ind];
-            if (bigram_probability >= eps)
+            if (bigram_probability <= eps)
             {
-                language_model->bigrams_number++;
-                language_model->bigrams = realloc(
-                            language_model->bigrams,
-                            language_model->bigrams_number * sizeof(float));
-                cur_bigram = language_model->bigrams
-                        + language_model->bigrams_number - 1;
-                cur_bigram->first_word = start_word_ind;
-                cur_bigram->second_word = end_word_ind;
-                cur_bigram->probability = bigram_probability;
+                continue;
             }
+            language_model->bigrams_number++;
+            language_model->bigrams = realloc(
+                        language_model->bigrams,
+                        language_model->bigrams_number * sizeof(TWordBigram));
+            cur_bigram = language_model->bigrams
+                    + language_model->bigrams_number - 1;
+            cur_bigram->first_word = start_word_ind;
+            cur_bigram->second_word = end_word_ind;
+            cur_bigram->probability = bigram_probability;
         }
     }
 

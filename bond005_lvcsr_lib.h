@@ -380,8 +380,8 @@ int save_language_model(char *file_name, TLanguageModel language_model);
  * Value of this coefficient must be more or equal 0, and less or equal 1.
  *
  * \param eps The bottom threshold of bigram probability. All bigrams whose
- * probabilities is less than this threshold will not take part in language
- * model. Value of this threshold must be more or equal 0, and less 1.
+ * probabilities is more or less than this threshold will not take part in
+ * language model. Value of this threshold must be more or equal 0, and less 1.
  *
  * \param language_model Pointer to the TLanguageModel structure representing
  * the language model which consists of unigrams array and bigrams array. These

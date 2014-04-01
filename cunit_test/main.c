@@ -2,6 +2,7 @@
 #include <CUnit/CUnit.h>
 
 #include "add_word_to_words_tree_test.h"
+#include "calculate_language_model_test.h"
 #include "create_linear_words_lexicon_test.h"
 #include "create_words_vocabulary_tree_test.h"
 #include "find_in_vocabulary_test.h"
@@ -96,6 +97,10 @@ int main()
         return CU_get_error();
     }
     if (!prepare_for_testing_of_get_bigram_probability())
+    {
+        return CU_get_error();
+    }
+    if (!prepare_for_testing_of_calculate_language_model())
     {
         return CU_get_error();
     }
