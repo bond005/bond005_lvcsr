@@ -251,8 +251,8 @@ int save_words_MLF(char *mlf_name, char **words_vocabulary, int words_number,
  *         char ***phonemes_vocabulary)
  *
  * \brief This function loads phonemes vocabulary (i.e. list of phonemes) from
- * the given text file into the string array. The phonemes vocabulary is being
- * sorted automatically at loading.
+ * the given text file into the string array. The phonemes vocabulary isn't
+ * being sorted at loading. It will be loaded "as is".
  *
  * \details It is basic function of this library. This function uses such
  * additional functions of library as find_in_vocabulary() and read_string().
@@ -267,9 +267,43 @@ int save_words_MLF(char *mlf_name, char **words_vocabulary, int words_number,
  * \return This function returns number of phonemes in case of successful
  * loading, and it returns zero in case of loading error.
  *
- * \sa find_in_vocabulary(), read_string().
+ * \sa read_string().
  */
 int load_phonemes_vocabulary(char *file_name, char ***phonemes_vocabulary);
+
+/*! \fn int calculate_phonemes_probabilities(
+ *        char *confusion_matrix_name, int phonemes_number,
+ *         float phonemes_probabilities_matrix[])
+ * \brief This function loads the phonemes confusion matrix from the given file
+ * and calculates the phonemes probabilities matrix on basis of loaded
+ * confusion matrix. The confusion matrix using as source data in this function
+ * is calculated usually by some phonemes recognizer.
+ *
+ * \details It is basic function of this library. This function doesn't use any
+ * additional functions of this library.
+ *
+ * \param confusion_matrix_name The name of text file containing the phonemes
+ * confusion matrix. Loaded confusion matrix must be quadratic matrix of
+ * (phonemes_number+1) on (phonemes_number+1) in size. Each row describes how
+ * often the corresponding phoneme was confused with other phonemes. Last item
+ * of the confusion matrix row describes how often the corresponding phoneme
+ * was mistakenly deleted. Last matrix row describes false insertions of
+ * phonemes.
+ *
+ * \param phonemes_number Number of phonemes, i.e size of the phonemes
+ * vocabulary.
+ *
+ * \param phonemes_probabilities_matrix It is quadratic matrix of
+ * phonemes_number on phonemes_number in size. This matrix is unfolded by
+ * rows. Each matrix line describes probabilities of confusing the
+ * corresponding phoneme with other phonemes.
+ *
+ * \return This function returns 1 in case of successful work completion, or
+ * it returns 0 in case of error.
+ */
+int calculate_phonemes_probabilities(
+        char *confusion_matrix_name, int phonemes_number,
+        float phonemes_probabilities_matrix[]);
 
 /*! \fn int load_words_vocabulary(char *file_name, char ***words_vocabulary)
  *
@@ -587,32 +621,54 @@ float get_bigram_probability(TLanguageModel language_model, int start_word_ind,
  *         PWordsTreeNode words_tree, TWordBigram bigrams[],int bigrams_number,
  *         PTranscriptionNode *recognized_words)
  *
- * \brief This function recognizes all words in the source phonemes sequence
- * using the words tree and the bigrams list.
+ * \brief This function recognizes all words which are represented in source
+ * sequences of phonemes. The recognition process is based on the linear words
+ * lexicon, the matrix of a priori phonemes probabilities, and the bigram
+ * language model.
  *
- * \param source_phonemes_transcription The source phones transcription which
- * will be recognized. As result of this recognition the words transcription
- * will be generated.
+ * \param source_phones_MLF The array of parts of the source MLF file. One part
+ * of the MLF file involves name of the some label file and phonemes
+ * transcription containing in this label file. Phonemes transcriptions which
+ * are represented in corresponding parts of source MLF file are input data for
+ * the words recognition system.
  *
- * \param words_tree The root of words tree which describes standard phonetic
- * transcriptions of all words.
+ * \param files_number The size of TMLFFilePart array, i.e. number of labels
+ * files of which the source MLF file consists.
  *
- * \param bigrams The sorted TWordBigram array which represents bigram model of
- * language.
+ * \param phonemes_number The size of phonemes vocabulary.
  *
- * \param bigrams_number The number of bigrams.
+ * \param phones_probabilities It is quadratic matrix of phonemes_number on
+ * phonemes_number in size. This matrix is unfolded by rows. Each matrix line
+ * describes probabilities of confusing the corresponding phoneme with other
+ * phonemes.
  *
- * \param recognized_words The pointer to words transcription which will be
- * created as result of recognition. The memory for this words transcription
- * will be allocated automatically in this function.
+ * \param words_number The size of words vocabulary.
  *
- * \return This function returns size of recognized words transcription in case
- * of successful recognizing, or it returns -1 in case of error.
+ * \param words_lexicon The TLinearWordsLexicon array describing the used words
+ * lexicon. Each node of words lexicon defines the word's index and word's
+ * phonetic transcription.
+ *
+ * \param language_model The language model which is used for recognition.
+ *
+ * \param result_words_MLF It is pointer to array of parts of the words MLF
+ * file. Each part of the words MLF file involves name of the some label file
+ * and words transcription which is contained in this label file. In this
+ * context the label file name is equal to the label file name in corresponding
+ * part of source MLF file (i.e. phonemes MLF file), and words transcription is
+ * recognition result of the phonemes sequence which is represented in the
+ * corresponding part of source MLF file. Memory for the array of parts of the
+ * words MLF file will be allocated automatically in this function. Numbers of
+ * labels files of which the result MLF file and source MLF file consist are
+ * equal.
+ *
+ * \return If the recognition process completes successfully, then this
+ * function returns 1. In other cases this function returns 0.
  */
 int recognize_words(
-        PTranscriptionNode source_phonemes_transcription,
-        PWordsTreeNode words_tree, TWordBigram bigrams[], int bigrams_number,
-        PTranscriptionNode *recognized_words);
+        TMLFFilePart *source_phones_MLF, int number_of_MLF_files,
+        int phonemes_number, float phones_probabilities[],
+        int words_number, TLinearWordsLexicon words_lexicon[],
+        TLanguageModel language_model, TMLFFilePart **result_words_MLF);
 
 /*! \fn int read_string(FILE *read_file, char *str)
  *
@@ -664,9 +720,7 @@ int prepare_filename(char *filename);
  * finds the most similar node.
  *
  * \details It is additional function of this library. This function is used in
- * such functions of library as load_phonemes_vocabulary(), load_words_MLF(),
- * load_words_vocabulary(), string_to_bigram() and
- * string_to_transcription_node().
+ * such functions of library as load_words_MLF() and load_words_vocabulary().
  *
  * \param vocabulary Sorted string array which represents the vocabulary in
  * which search will be realized.
@@ -681,14 +735,40 @@ int prepare_filename(char *filename);
  * \result This function returns index of found node in vocabulary in case of
  * successful completion of search, or it returns -1 in case of error.
  *
- * \sa load_phonemes_vocabulary(), load_words_MLF(), load_words_vocabulary(),
- * string_to_bigram(), string_to_transcription_node().
+ * \sa load_words_MLF(), load_words_vocabulary().
  */
 int find_in_vocabulary(char *vocabulary[], int vocabulary_size,
                        char *found_name, int *is_equal);
 
+/*! \fn int find_in_unsorted_vocabulary(
+ *         char *vocabulary[], int vocabulary_size, char *found_name)
+ *
+ * \brief This function finds the specified node (word or phoneme) in unsorted
+ * vocabulary.
+ *
+ * \details It is additional function of this library. This function is used in
+ * such functions of library as load_phonemes_MLF(), load_phonemes_vocabulary()
+ * and string_to_transcription_node().
+ *
+ * \param vocabulary Unsorted string array which represents the vocabulary in
+ * which search will be realized.
+ *
+ * \param vocabulary_size Size of unsorted string array.
+ *
+ * \param found_name Vocabulary node which must be found.
+ *
+ * \result This function returns index of found node in vocabulary in case of
+ * successful completion of search, or it returns -1 in case of error (for
+ * example, sought node isn't contained in vocabulary).
+ *
+ * \sa load_phonemes_MLF(), load_phonemes_vocabulary(),
+ * string_to_transcription_node().
+ */
+int find_in_unsorted_vocabulary(char *vocabulary[], int vocabulary_size,
+                                char *found_name);
+
 /*! \fn int string_to_transcription_node(
- *         char *str, char *vocabulary[], int vocabulary_size,
+ *         char *str, char *phonemes_vocabulary[], int phonemes_number,
  *         PTranscriptionNode node)
  *
  * \brief This function parses source string and converts it to the
@@ -699,8 +779,7 @@ int find_in_vocabulary(char *vocabulary[], int vocabulary_size,
  *
  * \param str The source string.
  *
- * \param vocabulary The vocabulary of words or phonemes which is sorted by
- * items names.
+ * \param phonemes_vocabulary The vocabulary of phonemes.
  *
  * \param vocabulary_size Size of vocabulary.
  *
@@ -712,9 +791,8 @@ int find_in_vocabulary(char *vocabulary[], int vocabulary_size,
  *
  * \sa load_phonemes_MLF().
  */
-int string_to_transcription_node(char *str,
-                                 char *vocabulary[], int vocabulary_size,
-                                 PTranscriptionNode node);
+int string_to_transcription_node(char *str, char *phonemes_vocabulary[],
+                                 int phonemes_number, PTranscriptionNode node);
 
 /*! \fn int select_word_and_transcription(
  *         char *str, char **word_substr, char **transcription_substr)
@@ -758,7 +836,7 @@ int select_word_and_transcription(char *str, char **word_substr,
  * \param transcription_str The source string description of phonetic
  * transcription.
  *
- * \param phonemes_vocabulary The sorted string array which contains names of
+ * \param phonemes_vocabulary The unsorted string array which contains names of
  * recognized phonemes.
  *
  * \param phonemes_number The size of phonemes vocabulary.

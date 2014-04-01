@@ -235,15 +235,39 @@ int find_in_vocabulary(char *vocabulary[], int vocabulary_size,
     return last_pos;
 }
 
-int string_to_transcription_node(char *str,
-                                 char *vocabulary[], int vocabulary_size,
-                                 PTranscriptionNode node)
+int find_in_unsorted_vocabulary(char *vocabulary[], int vocabulary_size,
+                                char *found_name)
+{
+    int i, res = -1;
+
+    if ((found_name == NULL) || (vocabulary_size <= 0) || (vocabulary == NULL))
+    {
+        return -1;
+    }
+
+    for (i = 0; i < vocabulary_size; i++)
+    {
+        if (vocabulary[i] != NULL)
+        {
+            if (strcmp(vocabulary[i], found_name) == 0)
+            {
+                res = i;
+                break;
+            }
+        }
+    }
+
+    return res;
+}
+
+int string_to_transcription_node(char *str, char *phonemes_vocabulary[],
+                                 int phonemes_number, PTranscriptionNode node)
 {
     char *start_time_label = NULL, *end_time_label = NULL;
     char *node_name = NULL, *probability_str = NULL;
-    int is_equal = 0;
 
-    if ((vocabulary_size <= 0) || (vocabulary == NULL) || (str == NULL))
+    if ((phonemes_number <= 0) || (phonemes_vocabulary == NULL)
+            || (str == NULL))
     {
         return 0;
     }
@@ -290,9 +314,9 @@ int string_to_transcription_node(char *str,
         return 0;
     }
 
-    node->node_data = find_in_vocabulary(vocabulary, vocabulary_size,
-                                         node_name, &is_equal);
-    if (!is_equal)
+    node->node_data = find_in_unsorted_vocabulary(
+                phonemes_vocabulary, phonemes_number, node_name);
+    if (node->node_data < 0)
     {
         return 0;
     }
@@ -314,82 +338,6 @@ int string_to_transcription_node(char *str,
     }
 
     return 1;
-}
-
-int find_in_bigrams_list(TWordBigram bigrams[], int bigrams_number,
-                         TWordBigram found_bigram, int *is_equal)
-{
-    if (is_equal != NULL)
-    {
-        *is_equal = 0;
-    }
-    if ((bigrams_number < 0) || ((bigrams_number > 0) && (bigrams == NULL)))
-    {
-        return -1;
-    }
-    if (bigrams_number == 0)
-    {
-        return 0;
-    }
-
-    int compare_res, first_pos = 0, last_pos = bigrams_number, middle_pos;
-
-    compare_res = bigrams[0].first_word-found_bigram.first_word;
-    if (compare_res == 0)
-    {
-        compare_res = bigrams[0].second_word-found_bigram.second_word;
-    }
-    if (compare_res >= 0)
-    {
-        if ((compare_res == 0) && (is_equal != NULL))
-        {
-            *is_equal = 1;
-        }
-        return 0;
-    }
-
-    compare_res = bigrams[last_pos-1].first_word-found_bigram.first_word;
-    if (compare_res == 0)
-    {
-        compare_res = bigrams[last_pos-1].second_word-found_bigram.second_word;
-    }
-    if (compare_res <= 0)
-    {
-        if ((compare_res == 0) && (is_equal != NULL))
-        {
-            *is_equal = 1;
-        }
-        return last_pos;
-    }
-
-    while (first_pos < last_pos)
-    {
-        middle_pos = first_pos + (last_pos - first_pos) / 2;
-        compare_res = found_bigram.first_word-bigrams[middle_pos].first_word;
-        if (compare_res == 0)
-        {
-            compare_res
-                    = found_bigram.second_word-bigrams[middle_pos].second_word;
-        }
-        if (compare_res == 0)
-        {
-            if (is_equal != NULL)
-            {
-                *is_equal = 1;
-            }
-            last_pos = middle_pos;
-            break;
-        }
-        else if (compare_res < 0)
-        {
-            last_pos = middle_pos;
-        }
-        else {
-            first_pos = middle_pos + 1;
-        }
-    }
-
-    return last_pos;
 }
 
 int select_word_and_transcription(char *str, char **word_substr,
@@ -459,7 +407,7 @@ int parse_transcription_str(char *transcription_str,char **phonemes_vocabulary,
                             int phonemes_number, int phonemes_sequence[])
 {
     char *phoneme_name = NULL;
-    int i = 0, is_equal = 0, is_ok = 1;
+    int i = 0, is_ok = 1;
 
     if ((transcription_str == NULL) || (phonemes_vocabulary == NULL)
             || (phonemes_number <= 0) || (phonemes_sequence == NULL))
@@ -472,9 +420,9 @@ int parse_transcription_str(char *transcription_str,char **phonemes_vocabulary,
     {
         return 0;
     }
-    phonemes_sequence[i] = find_in_vocabulary(
-                phonemes_vocabulary, phonemes_number, phoneme_name, &is_equal);
-    if (!is_equal)
+    phonemes_sequence[i] = find_in_unsorted_vocabulary(
+                phonemes_vocabulary, phonemes_number, phoneme_name);
+    if (phonemes_sequence[i] < 0)
     {
         return 0;
     }
@@ -483,10 +431,9 @@ int parse_transcription_str(char *transcription_str,char **phonemes_vocabulary,
 
     while (phoneme_name != NULL)
     {
-        phonemes_sequence[i] = find_in_vocabulary(
-                    phonemes_vocabulary, phonemes_number, phoneme_name,
-                    &is_equal);
-        if (!is_equal)
+        phonemes_sequence[i] = find_in_unsorted_vocabulary(
+                    phonemes_vocabulary, phonemes_number, phoneme_name);
+        if (phonemes_sequence[i] < 0)
         {
             is_ok = 0;
             break;
@@ -947,7 +894,7 @@ int save_words_MLF(char *mlf_name, char **words_vocabulary, int words_number,
 
 int load_phonemes_vocabulary(char *file_name, char ***phonemes_vocabulary)
 {
-    int i, j, buffer_size = 0, is_found = 0, vocabulary_size = 0;
+    int i, buffer_size = 0, vocabulary_size = 0;
     char buffer[BUFFER_SIZE];
     char **temp_vocabulary;
     FILE *vocabulary_file = NULL;
@@ -970,24 +917,14 @@ int load_phonemes_vocabulary(char *file_name, char ***phonemes_vocabulary)
         {
             continue;
         }
-        i = find_in_vocabulary(*phonemes_vocabulary, vocabulary_size, buffer,
-                               &is_found);
-        if (!is_found)
+        i = find_in_unsorted_vocabulary(*phonemes_vocabulary, vocabulary_size,
+                                        buffer);
+        if (i < 0)
         {
             *phonemes_vocabulary = realloc(*phonemes_vocabulary,
                                            (vocabulary_size+1)*sizeof(char*));
             temp_vocabulary = *phonemes_vocabulary;
-            if (i >= 0)
-            {
-                for (j = vocabulary_size; j > i; j--)
-                {
-                    temp_vocabulary[j] = temp_vocabulary[j-1];
-                }
-            }
-            else
-            {
-                i = vocabulary_size;
-            }
+            i = vocabulary_size;
             temp_vocabulary[i] = malloc((buffer_size+1) * sizeof(char));
             memset(temp_vocabulary[i], 0, (buffer_size+1) * sizeof(char));
             strcpy(temp_vocabulary[i], buffer);
@@ -997,6 +934,137 @@ int load_phonemes_vocabulary(char *file_name, char ***phonemes_vocabulary)
     fclose(vocabulary_file);
 
     return vocabulary_size;
+}
+
+int calculate_phonemes_probabilities(
+        char *confusion_matrix_name, int phonemes_number,
+        float phonemes_probabilities_matrix[])
+{
+    FILE *matrix_file = NULL;
+    int *confusion_matrix = NULL;
+    char buffer[BUFFER_SIZE];
+    char *value_str;
+    int i, j, buffer_size, value = 0, is_ok = 1;
+    float sum_value = 0.0;
+
+    if ((confusion_matrix_name == NULL) || (phonemes_number <= 0)
+            || (phonemes_probabilities_matrix == NULL))
+    {
+        return 0;
+    }
+
+    matrix_file = fopen(confusion_matrix_name, "r");
+    if (matrix_file == NULL)
+    {
+        return 0;
+    }
+    i = 0;
+    confusion_matrix = malloc((phonemes_number+1) * (phonemes_number+1)
+                              * sizeof(int));
+    memset(confusion_matrix, 0, (phonemes_number+1) * (phonemes_number+1)
+           * sizeof(int));
+    while (!feof(matrix_file))
+    {
+        buffer_size = read_string(matrix_file, buffer);
+        if (buffer_size <= 0)
+        {
+            continue;
+        }
+        if (i > phonemes_number)
+        {
+            is_ok = 0;
+            break;
+        }
+        j = 0;
+        value_str = strtok(buffer, " \t");
+        if (value_str == NULL)
+        {
+            is_ok = 0;
+            break;
+        }
+        if (sscanf(value_str, "%d", &value) != 1)
+        {
+            is_ok = 0;
+            break;
+        }
+        if (value < 0)
+        {
+            is_ok = 0;
+            break;
+        }
+        confusion_matrix[i*(phonemes_number+1)+j] = value;
+        j++;
+        value_str = strtok(NULL, " \t");
+        while (value_str != NULL)
+        {
+            if (j > phonemes_number)
+            {
+                is_ok = 0;
+                break;
+            }
+            if (sscanf(value_str, "%d", &value) != 1)
+            {
+                is_ok = 0;
+                break;
+            }
+            if (value < 0)
+            {
+                is_ok = 0;
+                break;
+            }
+            confusion_matrix[i*(phonemes_number+1)+j] = value;
+            j++;
+            value_str = strtok(NULL, " \t");
+        }
+        if (is_ok)
+        {
+            if (j != (phonemes_number+1))
+            {
+                is_ok = 0;
+            }
+        }
+        if (!is_ok)
+        {
+            break;
+        }
+        i++;
+    }
+    if (is_ok)
+    {
+        if (i != (phonemes_number+1))
+        {
+            is_ok = 0;
+        }
+    }
+    fclose(matrix_file);
+    if (!is_ok)
+    {
+        free(confusion_matrix);
+        return 0;
+    }
+    for (i = 0; i < phonemes_number; i++)
+    {
+        sum_value = 0;
+        for (j = 0; j < phonemes_number; j++)
+        {
+            sum_value += confusion_matrix[i*(phonemes_number+1)+j];
+        }
+        if (value > 0)
+        {
+            for (j = 0; j < phonemes_number; j++)
+            {
+                phonemes_probabilities_matrix[i*phonemes_number+j]
+                        = confusion_matrix[i*(phonemes_number+1)+j]/sum_value;
+            }
+        }
+        else
+        {
+            is_ok = 0;
+            break;
+        }
+    }
+    free(confusion_matrix);
+    return is_ok;
 }
 
 int load_words_vocabulary(char *file_name, char ***words_vocabulary)
@@ -1746,10 +1814,10 @@ float get_bigram_probability(TLanguageModel language_model, int start_word_ind,
 }
 
 int recognize_words(
-        PTranscriptionNode source_phonemes_transcription,
-        PWordsTreeNode words_tree,
-        TWordBigram bigrams[], int bigrams_number,
-        PTranscriptionNode *recognized_words)
+        TMLFFilePart *source_phones_MLF, int number_of_MLF_files,
+        int phonemes_number, float phones_probabilities[],
+        int words_number, TLinearWordsLexicon words_lexicon[],
+        TLanguageModel language_model, TMLFFilePart **result_words_MLF)
 {
     //...
 }

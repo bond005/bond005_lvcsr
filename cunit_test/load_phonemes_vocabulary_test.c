@@ -33,25 +33,13 @@ static int save_phonemes_vocabulary_for_testing()
     {
         return 0;
     }
-    for (i = 0; i < VOCABULARY_SIZE / 2; i++)
+    for (i = 0; i < VOCABULARY_SIZE; i++)
     {
         if (fprintf(vocabulary_file, " %s \t\n",
-                    target_phonemes_vocabulary[VOCABULARY_SIZE-i-1]) <= 0)
+                    target_phonemes_vocabulary[i]) <= 0)
         {
             res = 0;
             break;
-        }
-    }
-    if (res)
-    {
-        for (i = VOCABULARY_SIZE / 2; i < VOCABULARY_SIZE; i++)
-        {
-            if (fprintf(vocabulary_file, " %s \t\n",
-                        target_phonemes_vocabulary[i-VOCABULARY_SIZE/2]) <= 0)
-            {
-                res = 0;
-                break;
-            }
         }
     }
     fclose(vocabulary_file);
