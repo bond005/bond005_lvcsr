@@ -529,7 +529,8 @@ int read_string(FILE *read_file, char *str)
 
     while (str[start_pos] != 0)
     {
-        if ((str[start_pos] != ' ') && (str[start_pos] > 13))
+        if ((str[start_pos] != ' ') && (str[start_pos] != '\t')
+                && (str[start_pos] != '\n') && (str[start_pos] != '\r'))
         {
             break;
         }
@@ -544,7 +545,8 @@ int read_string(FILE *read_file, char *str)
     end_pos = strlen(str) - 1;
     while (end_pos > start_pos)
     {
-        if ((str[end_pos] != ' ') && (str[end_pos] > 13))
+        if ((str[end_pos] != ' ') && (str[end_pos] != '\t')
+                && (str[end_pos] != '\n') && (str[end_pos] != '\r'))
         {
             break;
         }
@@ -589,7 +591,8 @@ int prepare_filename(char *filename)
                     i = 0;
                     while (i < n)
                     {
-                        if ((filename[i] != ' ') && (filename[i] > 13))
+                        if ((filename[i]!=' ') && (filename[i]!='\t')
+                                && (filename[i]!='\n')  && (filename[i]!='\r'))
                         {
                             break;
                         }
@@ -603,7 +606,8 @@ int prepare_filename(char *filename)
                         i = n-1;
                         while (i > 0)
                         {
-                            if ((filename[i] != ' ') && (filename[i] > 13))
+                            if ((filename[i]!=' ')&&(filename[i]!='\t')
+                                    &&(filename[i]!='\r')&&(filename[i]!='\n'))
                             {
                                 break;
                             }
@@ -842,7 +846,8 @@ int select_word_and_transcription(char *str, char **word_substr,
     j = i - 1;
     while (j >= 0)
     {
-        if ((str[j] != ' ') && (str[j] > 13))
+        if ((str[j] != ' ') && (str[j] != '\t') && (str[j] != '\n')
+                && (str[j] != '\r'))
         {
             break;
         }
@@ -859,7 +864,8 @@ int select_word_and_transcription(char *str, char **word_substr,
     j = i+1;
     while (str[j] != 0)
     {
-        if ((str[j] != ' ') && (str[j] > 13))
+        if ((str[j] != ' ') && (str[j] != '\t') && (str[j] != '\n')
+                && (str[j] != '\r'))
         {
             break;
         }
@@ -1237,7 +1243,31 @@ int load_words_MLF(char *mlf_name, char **words_vocabulary, int words_number,
             }
             else
             {
-                new_node.node_data = find_in_vocabulary(
+                new_node.node_data = find_in_unsorted_vocabulary(
+                            words_vocabulary, words_number, buffer);
+                if (new_node.node_data >= 0)
+                {
+                    n_transcription++;
+                    cur_mlf_part->transcription_size++;
+                    cur_mlf_part->transcription = realloc(
+                                cur_mlf_part->transcription,
+                                n_transcription * sizeof(TTranscriptionNode));
+                    cur_mlf_part->transcription[n_transcription-1] = new_node;
+                }
+                /*if (new_node.node_data < 0)
+                {
+                    is_ok = 0;
+                }
+                else
+                {
+                    n_transcription++;
+                    cur_mlf_part->transcription_size++;
+                    cur_mlf_part->transcription = realloc(
+                                cur_mlf_part->transcription,
+                                n_transcription * sizeof(TTranscriptionNode));
+                    cur_mlf_part->transcription[n_transcription-1] = new_node;
+                }*/
+                /*new_node.node_data = find_in_vocabulary(
                             words_vocabulary, words_number, buffer, &is_equal);
                 if (!is_equal)
                 {
@@ -1251,7 +1281,7 @@ int load_words_MLF(char *mlf_name, char **words_vocabulary, int words_number,
                                 cur_mlf_part->transcription,
                                 n_transcription * sizeof(TTranscriptionNode));
                     cur_mlf_part->transcription[n_transcription-1] = new_node;
-                }
+                }*/
             }
             break;
         default:
@@ -1571,7 +1601,20 @@ int load_words_vocabulary(char *file_name, char ***words_vocabulary)
             is_ok = 0;
             break;
         }
-        i = find_in_vocabulary(*words_vocabulary, vocabulary_size, word_name,
+        if (find_in_unsorted_vocabulary(*words_vocabulary, vocabulary_size,
+                                        word_name) < 0)
+        {
+            *words_vocabulary = realloc(*words_vocabulary,
+                                        (vocabulary_size+1) * sizeof(char*));
+            temp_vocabulary = *words_vocabulary;
+            i = vocabulary_size;
+            n = strlen(word_name);
+            temp_vocabulary[i] = malloc((n+1) * sizeof(char));
+            memset(temp_vocabulary[i], 0, (n+1) * sizeof(char));
+            strcpy(temp_vocabulary[i], word_name);
+            vocabulary_size++;
+        }
+        /*i = find_in_vocabulary(*words_vocabulary, vocabulary_size, word_name,
                                &is_found);
         if (!is_found)
         {
@@ -1594,7 +1637,7 @@ int load_words_vocabulary(char *file_name, char ***words_vocabulary)
             memset(temp_vocabulary[i], 0, (n+1) * sizeof(char));
             strcpy(temp_vocabulary[i], word_name);
             vocabulary_size++;
-        }
+        }*/
     }
     fclose(vocabulary_file);
     if (!is_ok)
@@ -1813,9 +1856,17 @@ int calculate_language_model(TMLFFilePart *words_mlf_data, int files_number,
     {
         if (words_frequencies[i] < 1)
         {
+            words_frequencies[i] = 1;
+            total_words_count++;
+        }
+    }
+    for (i = 0; i < words_number; i++)
+    {
+        /*if (words_frequencies[i] < 1)
+        {
             is_ok = 0;
             break;
-        }
+        }*/
         language_model->unigrams_probabilities[i]
                 = (float)words_frequencies[i] / (float)total_words_count;
     }
@@ -1912,13 +1963,20 @@ PWordsTreeNode create_words_vocabulary_tree(
             is_ok = 0;
             break;
         }
-        word_index = find_in_vocabulary(words_vocabulary, words_number,
+        word_index = find_in_unsorted_vocabulary(
+                    words_vocabulary, words_number, word_name);
+        if (word_index < 0)
+        {
+            is_ok = 0;
+            break;
+        }
+        /*word_index = find_in_vocabulary(words_vocabulary, words_number,
                                         word_name, &is_found);
         if (!is_found)
         {
             is_ok = 0;
             break;
-        }
+        }*/
         phonemes_sequence_size = parse_transcription_str(
                     word_transcription, phonemes_vocabulary, phonemes_number,
                     phonemes_sequence);
@@ -2022,13 +2080,20 @@ int create_linear_words_lexicon(
             is_ok = 0;
             break;
         }
-        word_index = find_in_vocabulary(words_vocabulary, words_number,
+        word_index = find_in_unsorted_vocabulary(
+                    words_vocabulary, words_number, word_name);
+        if (word_index < 0)
+        {
+            is_ok = 0;
+            break;
+        }
+        /*word_index = find_in_vocabulary(words_vocabulary, words_number,
                                         word_name, &is_found);
         if (!is_found)
         {
             is_ok = 0;
             break;
-        }
+        }*/
         phonemes_sequence_size = parse_transcription_str(
                     word_transcription, phonemes_vocabulary, phonemes_number,
                     phonemes_sequence);

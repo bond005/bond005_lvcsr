@@ -183,7 +183,7 @@ int get_parameters_of_training(
         return 0;
     }
 
-    return (n == (argc-2));
+    return ((n * 2) == (argc-2));
 }
 
 int get_parameters_of_testing(
@@ -283,7 +283,7 @@ int get_parameters_of_testing(
         return 0;
     }
 
-    return (n == (argc-2));
+    return ((n * 2) == (argc-2));
 }
 
 int train_language_model_by_mlf_file(int argc, char *argv[])
