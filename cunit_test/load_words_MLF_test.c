@@ -42,8 +42,8 @@ static int create_MLF_transcription(PTranscriptionNode *created_transcription)
 
     for (j = 0; j < res; j++)
     {
-        transcription[j].start_time = -1;
-        transcription[j].end_time = -1;
+        transcription[j].start_time = 0;
+        transcription[j].end_time = 0;
         transcription[j].node_data = rand() % VOCABULARY_SIZE;
         transcription[j].probability = 1.0;
     }
@@ -163,55 +163,57 @@ static int create_incorrect_MLF_file_1()
 
 static int create_incorrect_MLF_file_2()
 {
-    int i, res = 0, transcription_size = 0;
+    int i, j, n, res = 0;
     FILE *MLF_file_handle = NULL;
-    char *transcription_name = "incorrect_transcription.lab";
-    char *incorrect_word = "abcdefgh";
-    char *cur_word;
-    PTranscriptionNode transcription = NULL;
+    char *word_name;
+    TTranscriptionNode cur_node;
 
-    if (!create_MLF_file_by_target_data(name_of_incorrect_MLF_file_2))
-    {
-        return 0;
-    }
-
-    transcription_size = create_MLF_transcription(&transcription);
-    transcription[transcription_size-1].node_data = VOCABULARY_SIZE + 4;
-
-    MLF_file_handle = fopen(name_of_incorrect_MLF_file_2, "a");
+    MLF_file_handle = fopen(name_of_incorrect_MLF_file_2, "w");
     if (MLF_file_handle == NULL)
     {
         return 0;
     }
-    if (fprintf(MLF_file_handle, "\"%s\"\n", transcription_name) > 0)
+    if (fprintf(MLF_file_handle, "%s\n", MLF_HEADER) > 0)
     {
         res = 1;
-        for (i = 0; i < transcription_size; i++)
+        for (i = 0; i < target_MLF_size; i++)
         {
-            if (transcription[i].node_data < VOCABULARY_SIZE)
+            if (fprintf(MLF_file_handle, "\"%s\"\n", target_MLF[i].name) <= 0)
             {
-                cur_word = words_vocabulary[transcription[i].node_data];
+                res = 0;
+                break;
             }
-            else
+            n = target_MLF[i].transcription_size;
+            for (j = 0; j < n; j++)
             {
-                cur_word = incorrect_word;
+                cur_node = target_MLF[i].transcription[j];
+                word_name = words_vocabulary[cur_node.node_data];
+                if (fprintf(MLF_file_handle, " %s  \n", word_name) <= 0)
+                {
+                    res = 0;
+                    break;
+                }
             }
-            if (fprintf(MLF_file_handle, "%s\n", cur_word) <= 0)
+            if (!res)
+            {
+                break;
+            }
+            if (i == (target_MLF_size-1))
+            {
+                if (fprintf(MLF_file_handle, " %s  \n", "abcdefgh") <= 0)
+                {
+                    res = 0;
+                    break;
+                }
+            }
+            if (fprintf(MLF_file_handle, "%c\n", '.') <= 0)
             {
                 res = 0;
                 break;
             }
         }
-        if (res)
-        {
-            if (fprintf(MLF_file_handle, "%c\n", '.') <= 0)
-            {
-                res = 0;
-            }
-        }
     }
     fclose(MLF_file_handle);
-    free(transcription);
     return res;
 }
 
@@ -427,15 +429,15 @@ void load_words_MLF_valid_test_2()
 void load_words_MLF_valid_test_3()
 {
     TMLFFilePart *data = NULL;
-    int data_size = 0, is_null = 0;
+    int data_size = 0, MLF_are_same = 1;
 
     data_size = load_words_MLF(name_of_incorrect_MLF_file_2, words_vocabulary,
                                VOCABULARY_SIZE, &data);
-    is_null = (data == NULL);
+    MLF_are_same = compare_two_MLF(target_MLF,target_MLF_size, data,data_size);
     free_MLF(&data, data_size);
 
-    CU_ASSERT_EQUAL_FATAL(0, data_size);
-    CU_ASSERT_TRUE_FATAL(is_null);
+    CU_ASSERT_EQUAL_FATAL(target_MLF_size, data_size);
+    CU_ASSERT_TRUE_FATAL(MLF_are_same);
 }
 
 void load_words_MLF_valid_test_4()

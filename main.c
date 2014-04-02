@@ -288,10 +288,10 @@ int get_parameters_of_testing(
 
 int train_language_model_by_mlf_file(int argc, char *argv[])
 {
-    char *mlf_file_name;
-    char *words_vocabulary_name;
-    char *language_model_name;
-    float lambda, eps;
+    char *mlf_file_name = NULL;
+    char *words_vocabulary_name = NULL;
+    char *language_model_name = NULL;
+    float lambda = 1.0, eps = 0.0;
     TMLFFilePart *data = NULL;
     int files_number_in_MLF;
     char **words_vocabulary = NULL;
@@ -344,12 +344,12 @@ int train_language_model_by_mlf_file(int argc, char *argv[])
 
 int recognize_speech_by_mlf_file(int argc, char *argv[])
 {
-    char *source_file_name;
-    char *result_file_name;
-    char *phonemes_vocabulary_name;
-    char *confusion_matrix_name;
-    char *words_vocabulary_name;
-    char *language_model_name;
+    char *source_file_name = NULL;
+    char *result_file_name = NULL;
+    char *phonemes_vocabulary_name = NULL;
+    char *confusion_matrix_name = NULL;
+    char *words_vocabulary_name = NULL;
+    char *language_model_name = NULL;
 
     TMLFFilePart *src_data = NULL, *res_data = NULL;
     int files_in_MLF = 0;

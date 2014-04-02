@@ -45,6 +45,30 @@ static int save_words_vocabulary_for_testing()
     {
         return 0;
     }
+    for (i = 0; i < VOCABULARY_SIZE; i++)
+    {
+        if (fprintf(vocabulary_file, " %s = \t %s \t\n",
+                    target_words_vocabulary[i], target_transcriptions[i]) <= 0)
+        {
+            res = 0;
+            break;
+        }
+    }
+    fclose(vocabulary_file);
+
+    return res;
+}
+
+/*static int save_words_vocabulary_for_testing()
+{
+    int i, res = 1;
+    FILE *vocabulary_file = NULL;
+
+    vocabulary_file = fopen(name_of_valid_vocabulary_file, "w");
+    if (vocabulary_file == NULL)
+    {
+        return 0;
+    }
     for (i = 0; i < VOCABULARY_SIZE / 2; i++)
     {
         if (fprintf(vocabulary_file, " %s = \t %s \t\n",
@@ -71,7 +95,7 @@ static int save_words_vocabulary_for_testing()
     fclose(vocabulary_file);
 
     return res;
-}
+}*/
 
 static int save_words_vocabulary_without_errors_for_testing()
 {

@@ -21,10 +21,10 @@ static int compare_bigrams(const void *ptr1, const void *ptr2)
     TWordBigram *bigram1 = (TWordBigram*)ptr1;
     TWordBigram *bigram2 = (TWordBigram*)ptr2;
 
-    res = bigram1->first_word - bigram2->first_word;
+    res = bigram1->second_word - bigram2->second_word;
     if (res == 0)
     {
-        res = bigram1->second_word - bigram2->second_word;
+        res = bigram1->first_word - bigram2->first_word;
     }
 
     return res;

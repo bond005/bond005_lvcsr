@@ -83,8 +83,8 @@ static void initialize_words_MLF_data()
     {
         for (j = 0; j < words_MLF_data[i].transcription_size; j++)
         {
-            words_MLF_data[i].transcription[j].start_time = -1;
-            words_MLF_data[i].transcription[j].end_time = -1;
+            words_MLF_data[i].transcription[j].start_time = 0;
+            words_MLF_data[i].transcription[j].end_time = 0;
             words_MLF_data[i].transcription[j].probability = 1.0;
         }
     }
@@ -128,97 +128,97 @@ static void create_target_language_model()
     target_language_model.bigrams
             = malloc(target_language_model.bigrams_number*sizeof(TWordBigram));
 
-    target_language_model.bigrams[0].first_word = 0;
-    target_language_model.bigrams[0].second_word = 1;
-    target_language_model.bigrams[0].probability = 2.0 / 3.0;
+    target_language_model.bigrams[0].first_word = 5;
+    target_language_model.bigrams[0].second_word = 0;
+    target_language_model.bigrams[0].probability = 2.0 / 5.0;
 
-    target_language_model.bigrams[1].first_word = 0;
-    target_language_model.bigrams[1].second_word = 9;
-    target_language_model.bigrams[1].probability = 1.0 / 3.0;
+    target_language_model.bigrams[1].first_word = 9;
+    target_language_model.bigrams[1].second_word = 0;
+    target_language_model.bigrams[1].probability = 1.0 / 5.0;
 
-    target_language_model.bigrams[2].first_word = 1;
-    target_language_model.bigrams[2].second_word = 2;
-    target_language_model.bigrams[2].probability = 2.0 / 4.0;
+    target_language_model.bigrams[2].first_word = 0;
+    target_language_model.bigrams[2].second_word = 1;
+    target_language_model.bigrams[2].probability = 2.0 / 3.0;
 
-    target_language_model.bigrams[3].first_word = 1;
-    target_language_model.bigrams[3].second_word = 6;
-    target_language_model.bigrams[3].probability = 2.0 / 4.0;
+    target_language_model.bigrams[3].first_word = 8;
+    target_language_model.bigrams[3].second_word = 1;
+    target_language_model.bigrams[3].probability = 1.0 / 2.0;
 
-    target_language_model.bigrams[4].first_word = 2;
-    target_language_model.bigrams[4].second_word = 3;
+    target_language_model.bigrams[4].first_word = 9;
+    target_language_model.bigrams[4].second_word = 1;
     target_language_model.bigrams[4].probability = 1.0 / 5.0;
 
-    target_language_model.bigrams[5].first_word = 2;
-    target_language_model.bigrams[5].second_word = 5;
-    target_language_model.bigrams[5].probability = 2.0 / 5.0;
+    target_language_model.bigrams[5].first_word = 1;
+    target_language_model.bigrams[5].second_word = 2;
+    target_language_model.bigrams[5].probability = 2.0 / 4.0;
 
-    target_language_model.bigrams[6].first_word = 2;
-    target_language_model.bigrams[6].second_word = 6;
-    target_language_model.bigrams[6].probability = 1.0 / 5.0;
+    target_language_model.bigrams[6].first_word = 4;
+    target_language_model.bigrams[6].second_word = 2;
+    target_language_model.bigrams[6].probability = 2.0 / 3.0;
 
-    target_language_model.bigrams[7].first_word = 3;
-    target_language_model.bigrams[7].second_word = 9;
-    target_language_model.bigrams[7].probability = 3.0 / 3.0;
+    target_language_model.bigrams[7].first_word = 9;
+    target_language_model.bigrams[7].second_word = 2;
+    target_language_model.bigrams[7].probability = 1.0 / 5.0;
 
-    target_language_model.bigrams[8].first_word = 4;
-    target_language_model.bigrams[8].second_word = 2;
-    target_language_model.bigrams[8].probability = 2.0 / 3.0;
+    target_language_model.bigrams[8].first_word = 2;
+    target_language_model.bigrams[8].second_word = 3;
+    target_language_model.bigrams[8].probability = 1.0 / 5.0;
 
-    target_language_model.bigrams[9].first_word = 5;
-    target_language_model.bigrams[9].second_word = 0;
-    target_language_model.bigrams[9].probability = 2.0 / 5.0;
+    target_language_model.bigrams[9].first_word = 6;
+    target_language_model.bigrams[9].second_word = 3;
+    target_language_model.bigrams[9].probability = 1.0 / 5.0;
 
-    target_language_model.bigrams[10].first_word = 5;
-    target_language_model.bigrams[10].second_word = 7;
-    target_language_model.bigrams[10].probability = 2.0 / 5.0;
+    target_language_model.bigrams[10].first_word = 6;
+    target_language_model.bigrams[10].second_word = 4;
+    target_language_model.bigrams[10].probability = 3.0 / 5.0;
 
-    target_language_model.bigrams[11].first_word = 5;
-    target_language_model.bigrams[11].second_word = 8;
-    target_language_model.bigrams[11].probability = 1.0 / 5.0;
+    target_language_model.bigrams[11].first_word = 2;
+    target_language_model.bigrams[11].second_word = 5;
+    target_language_model.bigrams[11].probability = 2.0 / 5.0;
 
-    target_language_model.bigrams[12].first_word = 6;
-    target_language_model.bigrams[12].second_word = 3;
-    target_language_model.bigrams[12].probability = 1.0 / 5.0;
+    target_language_model.bigrams[12].first_word = 7;
+    target_language_model.bigrams[12].second_word = 5;
+    target_language_model.bigrams[12].probability = 1.0 / 2.0;
 
-    target_language_model.bigrams[13].first_word = 6;
-    target_language_model.bigrams[13].second_word = 4;
-    target_language_model.bigrams[13].probability = 3.0 / 5.0;
+    target_language_model.bigrams[13].first_word = 1;
+    target_language_model.bigrams[13].second_word = 6;
+    target_language_model.bigrams[13].probability = 2.0 / 4.0;
 
-    target_language_model.bigrams[14].first_word = 7;
-    target_language_model.bigrams[14].second_word = 5;
-    target_language_model.bigrams[14].probability = 1.0 / 2.0;
+    target_language_model.bigrams[14].first_word = 2;
+    target_language_model.bigrams[14].second_word = 6;
+    target_language_model.bigrams[14].probability = 1.0 / 5.0;
 
     target_language_model.bigrams[15].first_word = 7;
     target_language_model.bigrams[15].second_word = 6;
     target_language_model.bigrams[15].probability = 1.0 / 2.0;
 
-    target_language_model.bigrams[16].first_word = 8;
-    target_language_model.bigrams[16].second_word = 1;
-    target_language_model.bigrams[16].probability = 1.0 / 2.0;
+    target_language_model.bigrams[16].first_word = 9;
+    target_language_model.bigrams[16].second_word = 6;
+    target_language_model.bigrams[16].probability = 1.0 / 5.0;
 
-    target_language_model.bigrams[17].first_word = 8;
-    target_language_model.bigrams[17].second_word = 9;
-    target_language_model.bigrams[17].probability = 1.0 / 2.0;
+    target_language_model.bigrams[17].first_word = 5;
+    target_language_model.bigrams[17].second_word = 7;
+    target_language_model.bigrams[17].probability = 2.0 / 5.0;
 
-    target_language_model.bigrams[18].first_word = 9;
-    target_language_model.bigrams[18].second_word = 0;
+    target_language_model.bigrams[18].first_word = 5;
+    target_language_model.bigrams[18].second_word = 8;
     target_language_model.bigrams[18].probability = 1.0 / 5.0;
 
     target_language_model.bigrams[19].first_word = 9;
-    target_language_model.bigrams[19].second_word = 1;
+    target_language_model.bigrams[19].second_word = 8;
     target_language_model.bigrams[19].probability = 1.0 / 5.0;
 
-    target_language_model.bigrams[20].first_word = 9;
-    target_language_model.bigrams[20].second_word = 2;
-    target_language_model.bigrams[20].probability = 1.0 / 5.0;
+    target_language_model.bigrams[20].first_word = 0;
+    target_language_model.bigrams[20].second_word = 9;
+    target_language_model.bigrams[20].probability = 1.0 / 3.0;
 
-    target_language_model.bigrams[21].first_word = 9;
-    target_language_model.bigrams[21].second_word = 6;
-    target_language_model.bigrams[21].probability = 1.0 / 5.0;
+    target_language_model.bigrams[21].first_word = 3;
+    target_language_model.bigrams[21].second_word = 9;
+    target_language_model.bigrams[21].probability = 3.0 / 3.0;
 
-    target_language_model.bigrams[22].first_word = 9;
-    target_language_model.bigrams[22].second_word = 8;
-    target_language_model.bigrams[22].probability = 1.0 / 5.0;
+    target_language_model.bigrams[22].first_word = 8;
+    target_language_model.bigrams[22].second_word = 9;
+    target_language_model.bigrams[22].probability = 1.0 / 2.0;
 }
 
 static int compare_language_models(TLanguageModel m1, TLanguageModel m2)

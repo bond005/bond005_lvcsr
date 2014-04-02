@@ -39,8 +39,8 @@ static int create_MLF_transcription(PTranscriptionNode *created_transcription)
 
     for (j = 0; j < res; j++)
     {
-        transcription[j].start_time = -1;
-        transcription[j].end_time = -1;
+        transcription[j].start_time = 0;
+        transcription[j].end_time = 0;
         transcription[j].node_data = rand() % VOCABULARY_SIZE;
         transcription[j].probability = 1.0;
     }

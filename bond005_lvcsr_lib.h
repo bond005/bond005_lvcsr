@@ -24,6 +24,7 @@
 #ifndef BOND005_LVCSR_LIB_H
 #define BOND005_LVCSR_LIB_H
 
+#include <stdint.h>
 #include <stdlib.h>
 
 /*! \def BUFFER_SIZE
@@ -101,10 +102,10 @@ typedef struct _TLinearWordsLexicon {
  * - event probability.
  */
 typedef struct _TTranscriptionNode {
-    int node_data;    /**< Data of node: index of word or phoneme. */
-    int start_time;   /**< Start time in 100ns units. */
-    int end_time;     /**< End time in 100ns units. */
-    float probability;/**< Probability of this acoustic event. */
+    int node_data;           /**< Data of node: index of word or phoneme. */
+    long unsigned start_time;/**< Start time in 100ns units. */
+    long unsigned end_time;  /**< End time in 100ns units. */
+    float probability;       /**< Probability of this acoustic event. */
 } TTranscriptionNode;
 
 /*! \typedef PTranscriptionNode

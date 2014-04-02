@@ -17,34 +17,34 @@ static void create_language_model_for_testing()
     language_model.bigrams_number = 6;
     language_model.bigrams = malloc(6 * sizeof(TWordBigram));
 
+    language_model.bigrams[0].first_word = 1;
+    language_model.bigrams[0].second_word = 0;
+    language_model.bigrams[0].probability = 0.13;
+
+    language_model.bigrams[1].first_word = 3;
+    language_model.bigrams[1].second_word = 0;
+    language_model.bigrams[1].probability = 0.2;
+
+    language_model.bigrams[2].first_word = 0;
+    language_model.bigrams[2].second_word = 2;
+    language_model.bigrams[2].probability = 0.23;
+
+    language_model.bigrams[3].first_word = 3;
+    language_model.bigrams[3].second_word = 2;
+    language_model.bigrams[3].probability = 0.25;
+
+    language_model.bigrams[4].first_word = 0;
+    language_model.bigrams[4].second_word = 3;
+    language_model.bigrams[4].probability = 0.11;
+
+    language_model.bigrams[5].first_word = 2;
+    language_model.bigrams[5].second_word = 3;
+    language_model.bigrams[5].probability = 0.08;
+
     language_model.unigrams_probabilities[0] = 0.2;
     language_model.unigrams_probabilities[1] = 0.3;
     language_model.unigrams_probabilities[2] = 0.15;
     language_model.unigrams_probabilities[3] = 0.35;
-
-    language_model.bigrams[0].first_word = 0;
-    language_model.bigrams[0].second_word = 2;
-    language_model.bigrams[0].probability = 0.23;
-
-    language_model.bigrams[1].first_word = 0;
-    language_model.bigrams[1].second_word = 3;
-    language_model.bigrams[1].probability = 0.11;
-
-    language_model.bigrams[2].first_word = 1;
-    language_model.bigrams[2].second_word = 0;
-    language_model.bigrams[2].probability = 0.13;
-
-    language_model.bigrams[3].first_word = 2;
-    language_model.bigrams[3].second_word = 3;
-    language_model.bigrams[3].probability = 0.08;
-
-    language_model.bigrams[4].first_word = 3;
-    language_model.bigrams[4].second_word = 0;
-    language_model.bigrams[4].probability = 0.2;
-
-    language_model.bigrams[5].first_word = 3;
-    language_model.bigrams[5].second_word = 2;
-    language_model.bigrams[5].probability = 0.25;
 
     incorrect_first_word = 1;
     incorrect_second_word = 2;
