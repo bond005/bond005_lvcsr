@@ -16,6 +16,7 @@
 #include "parse_transcription_str_test.h"
 #include "prepare_filename_test.h"
 #include "read_string_test.h"
+#include "recognize_words_test.h"
 #include "save_language_model_test.h"
 #include "save_words_MLF_test.h"
 #include "select_word_and_transcription_test.h"
@@ -106,6 +107,10 @@ int main()
         return CU_get_error();
     }
     if (!prepare_for_testing_of_calculate_phonemes_probabilities())
+    {
+        return CU_get_error();
+    }
+    if (!prepare_for_testing_of_recognize_words())
     {
         return CU_get_error();
     }

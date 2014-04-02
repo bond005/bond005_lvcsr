@@ -24,7 +24,8 @@ SOURCES += main.c \
     get_bigram_probability_test.c \
     calculate_language_model_test.c \
     create_linear_words_lexicon_test.c \
-    calculate_phonemes_probabilities_test.c
+    calculate_phonemes_probabilities_test.c \
+    recognize_words_test.c
 
 HEADERS += \
     ../bond005_lvcsr_lib.h \
@@ -47,6 +48,7 @@ HEADERS += \
     get_bigram_probability_test.h \
     calculate_language_model_test.h \
     create_linear_words_lexicon_test.h \
-    calculate_phonemes_probabilities_test.h
+    calculate_phonemes_probabilities_test.h \
+    recognize_words_test.h
 
 LIBS += -lcunit

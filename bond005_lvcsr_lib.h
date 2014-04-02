@@ -617,17 +617,18 @@ float get_bigram_probability(TLanguageModel language_model, int start_word_ind,
                              int end_word_ind);
 
 /*! \fn int recognize_words(
- *         PTranscriptionNode source_phonemes_transcription,
- *         PWordsTreeNode words_tree, TWordBigram bigrams[],int bigrams_number,
- *         PTranscriptionNode *recognized_words)
+           TMLFFilePart *source_phonemes_MLF, int number_of_MLF_files,
+           int phonemes_number, float phonemes_probabilities[],
+           int words_number, TLinearWordsLexicon words_lexicon[],
+           TLanguageModel language_model, TMLFFilePart **result_words_MLF)
  *
  * \brief This function recognizes all words which are represented in source
  * sequences of phonemes. The recognition process is based on the linear words
  * lexicon, the matrix of a priori phonemes probabilities, and the bigram
  * language model.
  *
- * \param source_phones_MLF The array of parts of the source MLF file. One part
- * of the MLF file involves name of the some label file and phonemes
+ * \param source_phonemes_MLF The array of parts of the source MLF file. One
+ * part of the MLF file involves name of the some label file and phonemes
  * transcription containing in this label file. Phonemes transcriptions which
  * are represented in corresponding parts of source MLF file are input data for
  * the words recognition system.
@@ -637,7 +638,7 @@ float get_bigram_probability(TLanguageModel language_model, int start_word_ind,
  *
  * \param phonemes_number The size of phonemes vocabulary.
  *
- * \param phones_probabilities It is quadratic matrix of phonemes_number on
+ * \param phonemes_probabilities It is quadratic matrix of phonemes_number on
  * phonemes_number in size. This matrix is unfolded by rows. Each matrix line
  * describes probabilities of confusing the corresponding phoneme with other
  * phonemes.
@@ -665,8 +666,8 @@ float get_bigram_probability(TLanguageModel language_model, int start_word_ind,
  * function returns 1. In other cases this function returns 0.
  */
 int recognize_words(
-        TMLFFilePart *source_phones_MLF, int number_of_MLF_files,
-        int phonemes_number, float phones_probabilities[],
+        TMLFFilePart *source_phonemes_MLF, int number_of_MLF_files,
+        int phonemes_number, float phonemes_probabilities[],
         int words_number, TLinearWordsLexicon words_lexicon[],
         TLanguageModel language_model, TMLFFilePart **result_words_MLF);
 

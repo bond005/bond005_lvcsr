@@ -21,10 +21,438 @@
  * Copyright: GNU General Public License version 3.
  */
 
+#include <float.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "bond005_lvcsr_lib.h"
+
+/* Structure for representation of backtrack pointer. The backtrack pointer is
+ * stack of word-time pairs which defines best words sequence (see X.Huang,
+ * Spoken Language Processing, pp.618-620). */
+typedef struct _TBackTrackPointer {
+    int word; // word index in the word lexicon
+    int time; // time moment
+    struct _TBackTrackPointer *next;
+} TBackTrackPointer;
+typedef TBackTrackPointer* PBackTrackPointer;
+
+/* Structure for representation of one cell of the matrix which is used in the
+ * Viterbi Beam Search algorithm (see X.Huang, Spoken Language Processing,
+ * pp.618-620). */
+typedef struct _TViterbiMatrixCell {
+    float cost;           // total cost
+    PBackTrackPointer btp;// stack of backtrack pointers
+} TViterbiMatrixCell;
+
+/* Structure for representation of whole matrix which is used in the Viterbi
+ * Beam Search algorithm (see X.Huang, Spoken Language Processing,
+ * pp.618-620). */
+typedef struct _TViterbiMatrix {
+    int times_number;           /* times number (i.e. length of recognized
+                                   phones sequence) */
+    int words_number;           /* words number (i.e. vocabulary size) */
+    int *words_sizes;           /* lengths of words (i.e. numbers of states in
+                                   each word) */
+    TViterbiMatrixCell ***cells;/* 3-dimension matrix for the Viterbi Beam
+                                   Search algorithm */
+} TViterbiMatrix;
+
+/* This function adds new word-time pair into head of the backtrack pointers
+ * stack. */
+static void add_to_backtrack_pointer(PBackTrackPointer* bt, int word, int time)
+{
+    PBackTrackPointer new_bt;
+    if (bt == NULL)
+    {
+        return;
+    }
+    new_bt = malloc(sizeof(TBackTrackPointer));
+    new_bt->word = word;
+    new_bt->time = time;
+    new_bt->next = *bt;
+    *bt = new_bt;
+}
+
+/* This function deletes all nodes of the specified stack of backtrack
+ * pointers. */
+static void delete_backtrack_pointer(PBackTrackPointer* bt)
+{
+    PBackTrackPointer deleted_bt;
+    if (bt == NULL)
+    {
+        return;
+    }
+    deleted_bt = *bt;
+    while (deleted_bt != NULL)
+    {
+        *bt = deleted_bt->next;
+        free(deleted_bt);
+        deleted_bt = *bt;
+    }
+}
+
+/* This function copies one backtrack pointers stack into another one. */
+static void copy_backtrack_pointer(PBackTrackPointer* dst_bt,
+                                   PBackTrackPointer src_bt)
+{
+    PBackTrackPointer new_bt, last_bt;
+    if (dst_bt == NULL)
+    {
+        return;
+    }
+    delete_backtrack_pointer(dst_bt);
+    if (src_bt == NULL)
+    {
+        return;
+    }
+    new_bt = malloc(sizeof(TBackTrackPointer));
+    new_bt->word = src_bt->word;
+    new_bt->time = src_bt->time;
+    new_bt->next = NULL;
+    *dst_bt = new_bt;
+    last_bt = new_bt;
+    src_bt = src_bt->next;
+    while (src_bt != NULL)
+    {
+        new_bt = malloc(sizeof(TBackTrackPointer));
+        new_bt->word = src_bt->word;
+        new_bt->time = src_bt->time;
+        new_bt->next = NULL;
+        last_bt->next = new_bt;
+        last_bt = new_bt;
+        src_bt = src_bt->next;
+    }
+}
+
+static void create_viterbi_matrix(
+        TViterbiMatrix* data, int times_number, int words_number,
+        TLinearWordsLexicon lexicon[])
+{
+    int t, w, s;
+    if ((data == NULL) || (times_number <= 0) || (words_number <= 0)
+            || (lexicon == NULL))
+    {
+        return;
+    }
+    data->times_number = times_number;
+    data->words_number = words_number;
+    data->words_sizes = malloc(sizeof(int) * words_number);
+    for (w = 0; w < words_number; w++)
+    {
+        data->words_sizes[w] = lexicon[w].phonemes_number;
+    }
+    data->cells = malloc(times_number * sizeof(TViterbiMatrixCell**));
+    for (t = 0; t < times_number; t++)
+    {
+        data->cells[t] = malloc(words_number * sizeof(TViterbiMatrixCell*));
+        for (w = 0; w < words_number; w++)
+        {
+            data->cells[t][w] = malloc((data->words_sizes[w]+1)
+                                       * sizeof(TViterbiMatrixCell));
+            for (s = 0; s <= data->words_sizes[w]; s++)
+            {
+                data->cells[t][w][s].btp = NULL;
+                data->cells[t][w][s].cost = FLT_MAX;
+            }
+        }
+    }
+}
+
+static void resize_viterbi_matrix(TViterbiMatrix* data, int new_times_number)
+{
+    int t, w, s;
+    if ((data == NULL) || (new_times_number <= 0))
+    {
+        return;
+    }
+    if (data->times_number >= new_times_number)
+    {
+        return;
+    }
+    data->cells = realloc(data->cells, new_times_number
+                          * sizeof(TViterbiMatrixCell**));
+    for (t = data->times_number; t < new_times_number; t++)
+    {
+        data->cells[t] = malloc(data->words_number
+                                * sizeof(TViterbiMatrixCell*));
+        for (w = 0; w < data->words_number; w++)
+        {
+            data->cells[t][w] = malloc((data->words_sizes[w]+1)
+                                       * sizeof(TViterbiMatrixCell));
+            for (s = 0; s <= data->words_sizes[w]; s++)
+            {
+                data->cells[t][w][s].btp = NULL;
+                data->cells[t][w][s].cost = FLT_MAX;
+            }
+        }
+    }
+    data->times_number = new_times_number;
+}
+
+static void initialize_values_of_viterbi_matrix(TViterbiMatrix data)
+{
+    int t, w, s;
+    for (t = 0; t < data.times_number; t++)
+    {
+        for (w = 0; w < data.words_number; w++)
+        {
+            for (s = 0; s <= data.words_sizes[w]; s++)
+            {
+                if (data.cells[t][w][s].btp != NULL)
+                {
+                    delete_backtrack_pointer(&(data.cells[t][w][s].btp));
+                }
+                data.cells[t][w][s].cost = FLT_MAX;
+            }
+        }
+    }
+}
+
+static void delete_viterbi_matrix(TViterbiMatrix* data)
+{
+    int t, w, s;
+    if (data == NULL)
+    {
+        return;
+    }
+    if ((data->words_number <= 0) || (data->times_number <= 0)
+            || (data->words_sizes == NULL) || (data->cells == NULL))
+    {
+        return;
+    }
+
+    for (t = 0; t < data->times_number; t++)
+    {
+        if (data->cells[t] == NULL)
+        {
+            continue;
+        }
+        for (w = 0; w < data->words_number; w++)
+        {
+            if (data->cells[t][w] == NULL)
+            {
+                continue;
+            }
+            for (s = 0; s <= data->words_sizes[w]; s++)
+            {
+                delete_backtrack_pointer(&(data->cells[t][w][s].btp));
+            }
+            free(data->cells[t][w]);
+            data->cells[t][w] = NULL;
+        }
+        free(data->cells[t]);
+        data->cells[t] = NULL;
+    }
+
+    free(data->words_sizes);
+    data->words_sizes = NULL;
+    free(data->cells);
+    data->cells = NULL;
+    data->words_number = 0;
+    data->times_number = 0;
+}
+
+static void calculate_viterbi_matrix(
+        TViterbiMatrix data, TTranscriptionNode src_phonemes_sequence[],
+        int phonemes_vocabulary_size, float phonemes_probabilities[],
+        TLinearWordsLexicon words_lexicon[], TLanguageModel language_model)
+{
+    int t, w, s, S, i, v, v_min;
+    float tmp_val1, tmp_val2, tmp_d, bigram_probability;
+
+    t = 0;
+    for (w = 0; w < data.words_number; w++)
+    {
+        i = words_lexicon[w].phonemes_indexes[0] * phonemes_vocabulary_size
+                + src_phonemes_sequence[t].node_data;
+        if (phonemes_probabilities[i] > 0.0)
+        {
+            data.cells[t][w][1].cost =
+                    -log(src_phonemes_sequence[t].probability)
+                    - log(phonemes_probabilities[i]);
+        }
+        else
+        {
+            data.cells[t][w][1].cost = FLT_MAX;
+        }
+    }
+
+    for (t = 1; t < data.times_number; t++)
+    {
+        for (w = 0; w < data.words_number; w++)
+        {
+            s = 1;
+            tmp_val1 = data.cells[t-1][w][s].cost;
+            if (tmp_val1 < (FLT_MAX - FLT_EPSILON))
+            {
+                tmp_d = -log(src_phonemes_sequence[t].probability);
+                i = words_lexicon[w].phonemes_indexes[s-1]
+                        * phonemes_vocabulary_size
+                        + src_phonemes_sequence[t].node_data;
+                if (phonemes_probabilities[i] > 0.0)
+                {
+                    tmp_d -= log(phonemes_probabilities[i]);
+                    tmp_val1 += tmp_d;
+                }
+                else
+                {
+                    tmp_val1 = FLT_MAX;
+                }
+            }
+            data.cells[t][w][s].cost = tmp_val1;
+            copy_backtrack_pointer(&(data.cells[t][w][s].btp),
+                    data.cells[t-1][w][s].btp);
+
+            for (s = 2; s <= data.words_sizes[w]; s++)
+            {
+                tmp_val1 = data.cells[t-1][w][s].cost;
+                if (tmp_val1 < (FLT_MAX - FLT_EPSILON))
+                {
+                    tmp_d = -log(src_phonemes_sequence[t].probability);
+                    i = words_lexicon[w].phonemes_indexes[s-1]
+                            * phonemes_vocabulary_size
+                            + src_phonemes_sequence[t].node_data;
+                    if (phonemes_probabilities[i] > 0.0)
+                    {
+                        tmp_d -= log(phonemes_probabilities[i]);
+                        tmp_val1 += tmp_d;
+                    }
+                    else
+                    {
+                        tmp_val1 = FLT_MAX;
+                    }
+                }
+                tmp_val2 = data.cells[t-1][w][s-1].cost;
+                if (tmp_val2 < (FLT_MAX - FLT_EPSILON))
+                {
+                    tmp_d = -log(src_phonemes_sequence[t].probability);
+                    i = words_lexicon[w].phonemes_indexes[s-1]
+                            * phonemes_vocabulary_size
+                            + src_phonemes_sequence[t].node_data;
+                    if (phonemes_probabilities[i] > 0.0)
+                    {
+                        tmp_d -= log(phonemes_probabilities[i]);
+                        tmp_val2 += tmp_d;
+                    }
+                    else
+                    {
+                        tmp_val2 = FLT_MAX;
+                    }
+                }
+                if (tmp_val1 <= tmp_val2)
+                {
+                    data.cells[t][w][s].cost = tmp_val1;
+                    copy_backtrack_pointer(&(data.cells[t][w][s].btp),
+                            data.cells[t-1][w][s].btp);
+                }
+                else
+                {
+                    data.cells[t][w][s].cost = tmp_val2;
+                    copy_backtrack_pointer(&(data.cells[t][w][s].btp),
+                            data.cells[t-1][w][s-1].btp);
+                }
+            }
+        }
+
+        for (w = 0; w < data.words_number; w++)
+        {
+            v_min = 0;
+            S = data.words_sizes[v_min];
+            bigram_probability = get_bigram_probability(language_model,
+                                                        v_min, w);
+            if (bigram_probability > 0.0)
+            {
+                tmp_val1 = -log(bigram_probability);
+                if (data.cells[t][v_min][data.words_sizes[v_min]].cost
+                        < (FLT_MAX - FLT_EPSILON))
+                {
+                    tmp_val1 += data.cells[t][v_min][S].cost;
+                }
+                else
+                {
+                    tmp_val1 = FLT_MAX;
+                }
+            }
+            else
+            {
+                tmp_val1 = FLT_MAX;
+            }
+            for (v = 1; v < data.words_number; v++)
+            {
+                S = data.words_sizes[v];
+                bigram_probability = get_bigram_probability(language_model,
+                                                            v, w);
+                if (bigram_probability > 0.0)
+                {
+                    tmp_val2 = -log(bigram_probability);
+                    if (data.cells[t][v][data.words_sizes[v]].cost
+                            < (FLT_MAX - FLT_EPSILON))
+                    {
+                        tmp_val2 += data.cells[t][v][S].cost;
+                    }
+                    else
+                    {
+                        tmp_val2 = FLT_MAX;
+                    }
+                }
+                else
+                {
+                    tmp_val2 = FLT_MAX;
+                }
+                if (tmp_val2 < tmp_val1)
+                {
+                    v_min = v;
+                    tmp_val1 = tmp_val2;
+                }
+            }
+            data.cells[t][w][0].cost = tmp_val1;
+            copy_backtrack_pointer(&(data.cells[t][w][0].btp),
+                    data.cells[t][v_min][data.words_sizes[v_min]].btp);
+            add_to_backtrack_pointer(&(data.cells[t][w][0].btp), v_min, t);
+
+            if (data.cells[t][w][0].cost < data.cells[t][w][1].cost)
+            {
+                data.cells[t][w][1].cost = data.cells[t][w][0].cost;
+                copy_backtrack_pointer(&(data.cells[t][w][1].btp),
+                        data.cells[t][w][0].btp);
+            }
+        }
+    }
+}
+
+static int calculate_words_sequence_by_viterbi_matrix(
+        TViterbiMatrix data, int recognized_words_sequence[])
+{
+    int t, w, w_min, i, n = 0;
+    PBackTrackPointer cur;
+
+    t = data.times_number - 1;
+    w_min = 0;
+    for (w = 1; w < data.words_number; w++)
+    {
+        if (data.cells[t][w][0].cost < data.cells[t][w_min][0].cost)
+        {
+            w_min = w;
+        }
+    }
+
+    cur = data.cells[t][w_min][0].btp;
+    while (cur != NULL)
+    {
+        for (i = n; i > 0; i--)
+        {
+            recognized_words_sequence[i] = recognized_words_sequence[i-1];
+        }
+        recognized_words_sequence[0] = cur->word;
+        n++;
+        cur = cur->next;
+    }
+
+    return n;
+}
 
 static int compare_bigrams(const void *ptr1, const void *ptr2)
 {
@@ -1814,10 +2242,114 @@ float get_bigram_probability(TLanguageModel language_model, int start_word_ind,
 }
 
 int recognize_words(
-        TMLFFilePart *source_phones_MLF, int number_of_MLF_files,
-        int phonemes_number, float phones_probabilities[],
+        TMLFFilePart *source_phonemes_MLF, int number_of_MLF_files,
+        int phonemes_number, float phonemes_probabilities[],
         int words_number, TLinearWordsLexicon words_lexicon[],
         TLanguageModel language_model, TMLFFilePart **result_words_MLF)
 {
-    //...
+    int is_ok = 1;
+    int i, j, n, words_sequence_length, max_words_sequence_length = 0;
+    int *words_sequence = NULL;
+    TMLFFilePart *cur_src, *cur_result;
+    TViterbiMatrix data;
+
+    if ((source_phonemes_MLF == NULL) || (number_of_MLF_files <= 0)
+            || (phonemes_number <= 0) || (phonemes_probabilities == NULL)
+            || (words_number <= 0) || (words_lexicon == NULL)
+            || (language_model.unigrams_number != words_number)
+            || (language_model.unigrams_probabilities == NULL)
+            || (language_model.bigrams_number <= 0)
+            || (language_model.bigrams == NULL) || (result_words_MLF == NULL))
+    {
+        return 0;
+    }
+
+    *result_words_MLF = malloc(sizeof(TMLFFilePart) * number_of_MLF_files);
+    cur_src = source_phonemes_MLF;
+    cur_result = *result_words_MLF;
+    for (i = 0; i < number_of_MLF_files; i++)
+    {
+        cur_result->transcription_size = 0;
+        cur_result->transcription = NULL;
+        n = strlen(cur_src->name);
+        cur_result->name = malloc((n+1)*sizeof(char));
+        memset(cur_result->name, 0, (n+1)*sizeof(char));
+        strcpy(cur_result->name, cur_src->name);
+        cur_result++;
+        cur_src++;
+    }
+
+    data.cells = NULL;
+    data.words_sizes = NULL;
+    data.times_number = 0;
+    data.words_number = 0;
+
+    cur_src = source_phonemes_MLF;
+    cur_result = *result_words_MLF;
+    max_words_sequence_length = cur_src->transcription_size;
+    words_sequence = realloc(words_sequence, max_words_sequence_length
+                             * sizeof(int));
+    create_viterbi_matrix(&data, cur_src->transcription_size, words_number,
+                          words_lexicon);
+    initialize_values_of_viterbi_matrix(data);
+    calculate_viterbi_matrix(
+                data, cur_src->transcription, phonemes_number,
+                phonemes_probabilities, words_lexicon, language_model);
+    words_sequence_length = calculate_words_sequence_by_viterbi_matrix(
+                data, words_sequence);
+    if (words_sequence_length > 0)
+    {
+        cur_result->transcription_size = words_sequence_length;
+        cur_result->transcription = malloc(words_sequence_length
+                                           * sizeof(TTranscriptionNode));
+        for (j = 0; j < words_sequence_length; j++)
+        {
+            cur_result->transcription[j].node_data = words_sequence[j];
+            cur_result->transcription[j].start_time = -1;
+            cur_result->transcription[j].end_time = -1;
+            cur_result->transcription[j].probability = 1.0;
+        }
+    }
+    cur_src++;
+    cur_result++;
+
+    for (i = 1; i < number_of_MLF_files; i++)
+    {
+        if (cur_src->transcription_size > max_words_sequence_length)
+        {
+            max_words_sequence_length = cur_src->transcription_size;
+            words_sequence = realloc(words_sequence, max_words_sequence_length
+                                     * sizeof(int));
+        }
+        resize_viterbi_matrix(&data, cur_src->transcription_size);
+        initialize_values_of_viterbi_matrix(data);
+        calculate_viterbi_matrix(
+                    data, cur_src->transcription, phonemes_number,
+                    phonemes_probabilities, words_lexicon, language_model);
+        words_sequence_length = calculate_words_sequence_by_viterbi_matrix(
+                    data, words_sequence);
+        if (words_sequence_length > 0)
+        {
+            cur_result->transcription_size = words_sequence_length;
+            cur_result->transcription = malloc(words_sequence_length
+                                               * sizeof(TTranscriptionNode));
+            for (j = 0; j < words_sequence_length; j++)
+            {
+                cur_result->transcription[j].node_data = words_sequence[j];
+                cur_result->transcription[j].start_time = -1;
+                cur_result->transcription[j].end_time = -1;
+                cur_result->transcription[j].probability = 1.0;
+            }
+        }
+        cur_src++;
+        cur_result++;
+    }
+    delete_viterbi_matrix(&data);
+    free(words_sequence);
+    if (!is_ok)
+    {
+        free_MLF(result_words_MLF, number_of_MLF_files);
+    }
+
+    return is_ok;
 }
