@@ -454,6 +454,49 @@ static int calculate_words_sequence_by_viterbi_matrix(
     return n;
 }
 
+static int create_phonemes_sequence_by_transcription(
+        TTranscriptionNode transcription[], int transcription_length,
+        TTranscriptionNode **phonemes_sequence)
+{
+    TTranscriptionNode *tmp_sequence;
+    int i, j, k, number_of_windows_10ms, phonemes_sequence_length = 0;
+
+    for (i = 0; i < transcription_length; i++)
+    {
+        number_of_windows_10ms = (transcription[i].end_time
+                                  - transcription[i].start_time) / 100000;
+        if (number_of_windows_10ms < 1)
+        {
+            number_of_windows_10ms = 1;
+        }
+        phonemes_sequence_length += number_of_windows_10ms;
+    }
+
+    *phonemes_sequence = malloc(phonemes_sequence_length
+                                * sizeof(TTranscriptionNode));
+    tmp_sequence = *phonemes_sequence;
+    j = 0;
+    for (i = 0; i < transcription_length; i++)
+    {
+        number_of_windows_10ms = (transcription[i].end_time
+                                  - transcription[i].start_time) / 100000;
+        if (number_of_windows_10ms < 1)
+        {
+            number_of_windows_10ms = 1;
+        }
+        for (k = 0; k < number_of_windows_10ms; k++)
+        {
+            tmp_sequence[j+k].node_data = transcription[i].node_data;
+            tmp_sequence[j+k].probability = transcription[i].probability;
+            tmp_sequence[j+k].start_time = -1;
+            tmp_sequence[j+k].end_time = -1;
+        }
+        j += number_of_windows_10ms;
+    }
+
+    return phonemes_sequence_length;
+}
+
 static int compare_bigrams(const void *ptr1, const void *ptr2)
 {
     int res;
@@ -2248,10 +2291,13 @@ int recognize_words(
         TLanguageModel language_model, TMLFFilePart **result_words_MLF)
 {
     int is_ok = 1;
-    int i, j, n, words_sequence_length, max_words_sequence_length = 0;
+    int i, j, n;
+    int phonemes_sequence_length;
+    int words_sequence_length, max_words_sequence_length = 0;
     int *words_sequence = NULL;
     TMLFFilePart *cur_src, *cur_result;
     TViterbiMatrix data;
+    TTranscriptionNode *recognized_phonemes_sequence = NULL;
 
     if ((source_phonemes_MLF == NULL) || (number_of_MLF_files <= 0)
             || (phonemes_number <= 0) || (phonemes_probabilities == NULL)
@@ -2286,15 +2332,20 @@ int recognize_words(
 
     cur_src = source_phonemes_MLF;
     cur_result = *result_words_MLF;
+    phonemes_sequence_length = create_phonemes_sequence_by_transcription(
+                cur_src->transcription, cur_src->transcription_size,
+                &recognized_phonemes_sequence);
     max_words_sequence_length = cur_src->transcription_size;
     words_sequence = realloc(words_sequence, max_words_sequence_length
                              * sizeof(int));
-    create_viterbi_matrix(&data, cur_src->transcription_size, words_number,
+    create_viterbi_matrix(&data, phonemes_sequence_length, words_number,
                           words_lexicon);
     initialize_values_of_viterbi_matrix(data);
     calculate_viterbi_matrix(
-                data, cur_src->transcription, phonemes_number,
+                data, recognized_phonemes_sequence, phonemes_number,
                 phonemes_probabilities, words_lexicon, language_model);
+    free(recognized_phonemes_sequence);
+    recognized_phonemes_sequence = NULL;
     words_sequence_length = calculate_words_sequence_by_viterbi_matrix(
                 data, words_sequence);
     if (words_sequence_length > 0)
@@ -2315,17 +2366,22 @@ int recognize_words(
 
     for (i = 1; i < number_of_MLF_files; i++)
     {
+        phonemes_sequence_length = create_phonemes_sequence_by_transcription(
+                    cur_src->transcription, cur_src->transcription_size,
+                    &recognized_phonemes_sequence);
         if (cur_src->transcription_size > max_words_sequence_length)
         {
             max_words_sequence_length = cur_src->transcription_size;
             words_sequence = realloc(words_sequence, max_words_sequence_length
                                      * sizeof(int));
         }
-        resize_viterbi_matrix(&data, cur_src->transcription_size);
+        resize_viterbi_matrix(&data, phonemes_sequence_length);
         initialize_values_of_viterbi_matrix(data);
         calculate_viterbi_matrix(
-                    data, cur_src->transcription, phonemes_number,
+                    data, recognized_phonemes_sequence, phonemes_number,
                     phonemes_probabilities, words_lexicon, language_model);
+        free(recognized_phonemes_sequence);
+        recognized_phonemes_sequence = NULL;
         words_sequence_length = calculate_words_sequence_by_viterbi_matrix(
                     data, words_sequence);
         if (words_sequence_length > 0)
