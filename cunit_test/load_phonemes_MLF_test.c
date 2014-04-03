@@ -127,7 +127,7 @@ static int create_MLF_file_by_target_data(char *filename)
             {
                 cur_node = target_MLF[i].transcription[j];
                 phoneme_name = phonemes_vocabulary[cur_node.node_data];
-                if (fprintf(MLF_file_handle, " %d \t %d  %s  ",
+                if (fprintf(MLF_file_handle, " %lu \t %lu  %s  ",
                             cur_node.start_time, cur_node.end_time,
                             phoneme_name) <= 0)
                 {
@@ -222,7 +222,7 @@ static int create_incorrect_MLF_file_2()
         res = 1;
         for (i = 0; i < transcription_size; i++)
         {
-            if (fprintf(MLF_file_handle, "%d %d %s %12.10f\n",
+            if (fprintf(MLF_file_handle, "%lu %lu %s %12.10f\n",
                         transcription[i].start_time, transcription[i].end_time,
                         phonemes_vocabulary[transcription[i].node_data],
                         transcription[i].probability) <= 0)
@@ -270,7 +270,7 @@ static int create_incorrect_MLF_file_3()
         res = 1;
         for (i = 0; i < transcription_size; i++)
         {
-            if (fprintf(MLF_file_handle, "%d %d %s %12.10f\n",
+            if (fprintf(MLF_file_handle, "%lu %lu %s %12.10f\n",
                         transcription[i].start_time, transcription[i].end_time,
                         phonemes_vocabulary[transcription[i].node_data],
                         transcription[i].probability) <= 0)
@@ -317,7 +317,7 @@ static int create_incorrect_MLF_file_4()
         res = 1;
         for (i = 0; i < transcription_size; i++)
         {
-            if (fprintf(MLF_file_handle, "%d %d %s %12.10f\n",
+            if (fprintf(MLF_file_handle, "%lu %lu %s %12.10f\n",
                         transcription[i].start_time, transcription[i].end_time,
                         phonemes_vocabulary[transcription[i].node_data],
                         transcription[i].probability) <= 0)
@@ -374,7 +374,7 @@ static int create_incorrect_MLF_file_5()
             {
                 cur_phoneme = incorrect_phoneme;
             }
-            if (fprintf(MLF_file_handle, "%d %d %s %12.10f\n",
+            if (fprintf(MLF_file_handle, "%lu %lu %s %12.10f\n",
                         transcription[i].start_time, transcription[i].end_time,
                         cur_phoneme, transcription[i].probability) <= 0)
             {
@@ -419,7 +419,7 @@ static int create_incorrect_MLF_file_6()
         for (i = 0; i < transcription_size; i++)
         {
             cur_phoneme = phonemes_vocabulary[transcription[i].node_data];
-            if (fprintf(MLF_file_handle, "%d %d %s %12.10f\n",
+            if (fprintf(MLF_file_handle, "%lu %lu %s %12.10f\n",
                         transcription[i].start_time, transcription[i].end_time,
                         cur_phoneme, transcription[i].probability) <= 0)
             {
