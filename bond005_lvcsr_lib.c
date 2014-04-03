@@ -29,6 +29,8 @@
 
 #include "bond005_lvcsr_lib.h"
 
+#define ACOUSTIC_PRUNING_THRESHOLD 0.5
+
 /* Structure for representation of backtrack pointer. The backtrack pointer is
  * stack of word-time pairs which defines best words sequence (see X.Huang,
  * Spoken Language Processing, pp.618-620). */
@@ -140,6 +142,22 @@ static void copy_backtrack_pointer(PBackTrackPointer* dst_bt,
     }
 }
 
+/* This function allocates memory for data used in the Viterbi Beam Search
+ * algorithm. The data are represented by three-dimension matrix (see
+ * description of TViterbiMatrix structure). First dimension is time, second
+ * dimension is words lexicon, and third dimension is words states.
+ *
+ * The time dimension size is equal to 2 always to use sparingly the allocated
+ * memory (only current and previous time points are being saved at each step).
+ *
+ * The words dimension size is equal to words lexicon size.
+ *
+ * The states dimension size is different for various words. Each word has as
+ * many states as it has phonemes according to the lexicon. Besides, additional
+ * state as initial pseudo-state is inserted in front of the real first word
+ * state (this pseudo-state is necessary for implementation of inter-word
+ * transition rules).
+ */
 static void create_viterbi_matrix(
         TViterbiMatrix* data, int words_number, TLinearWordsLexicon lexicon[])
 {
@@ -172,6 +190,9 @@ static void create_viterbi_matrix(
     }
 }
 
+/* This function shifts the Viterbi matrix data from right to left along time
+ * axis.
+ */
 static void shift_viterbi_matrix(TViterbiMatrix data)
 {
     int w, s;
@@ -191,6 +212,10 @@ static void shift_viterbi_matrix(TViterbiMatrix data)
     }
 }
 
+/* This function initializes all cells of the given Viterbi matrix as follows:
+ * FLT_MAX values will be assigned to all costs, and NULL values will be
+ * assigned to all backtrack pointers (herewith memory allocated for these
+ * backtrack pointers will be freed). */
 static void initialize_values_of_viterbi_matrix(TViterbiMatrix data)
 {
     int t, w, s;
@@ -210,6 +235,8 @@ static void initialize_values_of_viterbi_matrix(TViterbiMatrix data)
     }
 }
 
+/* This function frees all memory which was allocated for the Viterbi matrix.
+ */
 static void delete_viterbi_matrix(TViterbiMatrix* data)
 {
     int t, w, s;
@@ -278,6 +305,12 @@ static void print_memory_for_backtrack_pointers(TViterbiMatrix data)
            bytes);
 }
 
+/* This function finds the bigram like "start_word_i->end_word_i" in the
+ * language model. Starting position of search is specified by the
+ * cur_bigram_i argument. As result this function returns probability of the
+ * found bigram or 0 if the bigram isn't found. Also, specified starting
+ * position of bigram search is being shifted from left to right in process of
+ * this search, and such changing of starting position is saved. */
 static float find_bigram(TLanguageModel language_model, int start_word_i,
                          int end_word_i, int *cur_bigram_i)
 {
@@ -328,6 +361,7 @@ static void calculate_viterbi_matrix(
     int bigram_i;
     int t_count, t = 0, w, s, S, i, v, v_min;
     float tmp_val1, tmp_val2, tmp_d, bigram_probability;
+    float pruning_threshold_cost;
 
     printf("\n");
     for (t = 0; t < data.times_number; t++)
@@ -502,6 +536,33 @@ static void calculate_viterbi_matrix(
                 data.cells[t][w][1].cost = data.cells[t][w][0].cost;
                 copy_backtrack_pointer(&(data.cells[t][w][1].btp),
                         data.cells[t][w][0].btp);
+            }
+        }
+
+        pruning_threshold_cost = data.cells[t][0][1].cost;
+        for (w = 0; w < data.words_number; w++)
+        {
+            for (s = 1; s <= data.words_sizes[w]; s++)
+            {
+                if (data.cells[t][w][s].cost < pruning_threshold_cost)
+                {
+                    pruning_threshold_cost = data.cells[t][w][s].cost;
+                }
+            }
+        }
+        if (pruning_threshold_cost < (FLT_MAX - FLT_EPSILON))
+        {
+            pruning_threshold_cost -= log(ACOUSTIC_PRUNING_THRESHOLD);
+            for (w = 0; w < data.words_number; w++)
+            {
+                for (s = 1; s <= data.words_sizes[w]; s++)
+                {
+                    if (data.cells[t][w][s].cost > pruning_threshold_cost)
+                    {
+                        data.cells[t][w][s].cost = FLT_MAX;
+                        delete_backtrack_pointer(&(data.cells[t][w][s].btp));
+                    }
+                }
             }
         }
     }

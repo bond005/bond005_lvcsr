@@ -25,6 +25,7 @@
 #define BOND005_LVCSR_LIB_H
 
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 /*! \def BUFFER_SIZE
