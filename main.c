@@ -444,8 +444,9 @@ int recognize_speech_by_mlf_file(int argc, char *argv[])
         free_linear_words_lexicon(&words_lexicon, words_number);
         free_language_model(&language_model);
         free_MLF(&src_data, files_in_MLF);
-        fprintf(stderr, "The input data cannot be recognized (probably, it "\
-                "is incorrect).\n");
+        fprintf(stderr, "The input data cannot be recognized (probably, this "\
+                "data are not valid, or recognition parameters are "\
+                "incorrect).\n");
         return 0;
     }
     if (!save_words_MLF(result_file_name, words_vocabulary, words_number, res_data, files_in_MLF))
