@@ -25,7 +25,9 @@ SOURCES += main.c \
     calculate_language_model_test.c \
     create_linear_words_lexicon_test.c \
     calculate_phonemes_probabilities_test.c \
-    recognize_words_test.c
+    recognize_words_test.c \
+    ../backtrack_pointers_lib.c \
+    backtrack_pointers_test.c
 
 HEADERS += \
     ../bond005_lvcsr_lib.h \
@@ -49,6 +51,8 @@ HEADERS += \
     calculate_language_model_test.h \
     create_linear_words_lexicon_test.h \
     calculate_phonemes_probabilities_test.h \
-    recognize_words_test.h
+    recognize_words_test.h \
+    ../backtrack_pointers_lib.h \
+    backtrack_pointers_test.h
 
 LIBS += -lcunit
