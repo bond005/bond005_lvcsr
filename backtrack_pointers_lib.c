@@ -2,8 +2,6 @@
 #include <string.h>
 #include "backtrack_pointers_lib.h"
 
-#define CAPACITY_INC 10
-
 void create_backtrack_pointer(PBacktrackPointer *btp)
 {
     if (btp == NULL)
@@ -49,11 +47,11 @@ void add_to_backtrack_pointer(PBacktrackPointer btp, int word_i, int time_i)
     }
 
     btp->size++;
-    if (btp->size < btp->capacity)
+    if (btp->size > btp->capacity)
     {
         do {
             btp->capacity += CAPACITY_INC;
-        } while (btp->size < btp->capacity);
+        } while (btp->size > btp->capacity);
 
         if (btp->words == NULL)
         {

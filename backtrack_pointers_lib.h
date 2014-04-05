@@ -1,6 +1,8 @@
 #ifndef BACKTRACK_POINTERS_LIB_H
 #define BACKTRACK_POINTERS_LIB_H
 
+#define CAPACITY_INC 10
+
 /* Structure for representation of backtrack pointer. The backtrack pointer is
  * stack of word-time pairs which defines best words sequence (see X.Huang,
  * Spoken Language Processing, pp.618-620). */
