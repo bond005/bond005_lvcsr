@@ -31,8 +31,8 @@
 #include "bond005_lvcsr_lib.h"
 
 //#define __LVCSR_DEBUG__
-#define __LVCSR_MEMORY_CONTROL__
-#define PORTION_OF_PRUNED_HYPOTHESES 0.9
+//#define __LVCSR_MEMORY_CONTROL__
+#define PRUNING_COEFF 0.8
 
 /* Structure for representation of one cell of the matrix which is used in the
  * Viterbi Beam Search algorithm (see X.Huang, Spoken Language Processing,
@@ -111,11 +111,14 @@ static void print_backtrack_pointers(TViterbiMatrix data, int t)
     int w, s;
     for (w = 0; w < data.words_number; w++)
     {
-        for (s = 0; s <= data.words_sizes[w]; s++)
+        s = 0;
+        print_one_backtrack_pointer(data.cells[t][w][s].btp);
+        printf("\n");
+        /*for (s = 0; s <= data.words_sizes[w]; s++)
         {
             print_one_backtrack_pointer(data.cells[t][w][s].btp);
             printf("\n");
-        }
+        }*/
     }
 }
 #endif //__LVCSR_DEBUG__
@@ -457,7 +460,7 @@ static int calculate_viterbi_matrix(
                 remove_all_from_backtrack_pointer(data.cells[t][w][s].btp);
             }
 
-            for (s = 2; s <= data.words_sizes[w]; s++)
+            for (s = 2; s < data.words_sizes[w]; s++)
             {
                 trg_phoneme_i = words_lexicon[w].phonemes_indexes[s-1];
                 tmp_d = src_phonemes_weights[t_count];
@@ -502,44 +505,43 @@ static int calculate_viterbi_matrix(
                                             data.cells[t-1][w][s-1].btp);
                 }
             }
-        }
 
-        w = 0; s = 1;
-        min_cost = data.cells[t][w][s].cost;
-        max_cost = data.cells[t][w][s].cost;
-        for (w = 0; w < data.words_number; w++)
-        {
-            for (s = 1; s <= data.words_sizes[w]; s++)
+            s = data.words_sizes[w];
+            tmp_val1 = data.cells[t][w][s-1].cost;
+            tmp_val2 = data.cells[t-1][w][s].cost;
+            if (tmp_val2 < (FLT_MAX - FLT_EPSILON))
             {
-                if (data.cells[t][w][s].cost >= (FLT_MAX - FLT_EPSILON))
+                trg_phoneme_i = words_lexicon[w].phonemes_indexes[s-1];
+                tmp_d = src_phonemes_weights[t_count];
+                i = trg_phoneme_i * phonemes_vocabulary_size + inp_phoneme_i;
+                if (confusion_penalties[i] < (FLT_MAX - FLT_EPSILON))
                 {
-                    continue;
+                    tmp_val2 += (tmp_d + confusion_penalties[i]);
                 }
-                if (data.cells[t][w][s].cost < min_cost)
+                else
                 {
-                    min_cost = data.cells[t][w][s].cost;
-                }
-                if (data.cells[t][w][s].cost > max_cost)
-                {
-                    max_cost = data.cells[t][w][s].cost;
+                    tmp_val2 = FLT_MAX;
                 }
             }
-        }
-        if (min_cost >= (FLT_MAX - FLT_EPSILON))
-        {
-            is_ok = 0;
-            break;
-        }
-        cost_threshold = min_cost + 0.1 * (max_cost - min_cost) + FLT_EPSILON;
-        for (w = 0; w < data.words_number; w++)
-        {
-            for (s = 1; s <= data.words_sizes[w]; s++)
+            if (tmp_val1 <= tmp_val2)
             {
-                if (data.cells[t][w][s].cost > cost_threshold)
+                data.cells[t][w][s].cost = tmp_val1;
+                if (tmp_val1 < (FLT_MAX - FLT_EPSILON))
                 {
-                    data.cells[t][w][s].cost = FLT_MAX;
-                    remove_all_from_backtrack_pointer(data.cells[t][w][s].btp);
+                    copy_backtrack_pointers(data.cells[t][w][s].btp,
+                                            data.cells[t][w][s-1].btp);
                 }
+                else
+                {
+                    remove_all_from_backtrack_pointer(
+                                data.cells[t][w][s].btp);
+                }
+            }
+            else
+            {
+                data.cells[t][w][s].cost = tmp_val2;
+                copy_backtrack_pointers(data.cells[t][w][s].btp,
+                                        data.cells[t-1][w][s].btp);
             }
         }
 
@@ -605,6 +607,46 @@ static int calculate_viterbi_matrix(
                 data.cells[t][w][1].cost = data.cells[t][w][0].cost;
                 copy_backtrack_pointers(data.cells[t][w][1].btp,
                                         data.cells[t][w][0].btp);
+            }
+        }
+
+        w = 0; s = 1;
+        min_cost = data.cells[t][w][s].cost;
+        max_cost = data.cells[t][w][s].cost;
+        for (w = 0; w < data.words_number; w++)
+        {
+            for (s = 1; s <= data.words_sizes[w]; s++)
+            {
+                if (data.cells[t][w][s].cost >= (FLT_MAX - FLT_EPSILON))
+                {
+                    continue;
+                }
+                if (data.cells[t][w][s].cost < min_cost)
+                {
+                    min_cost = data.cells[t][w][s].cost;
+                }
+                if (data.cells[t][w][s].cost > max_cost)
+                {
+                    max_cost = data.cells[t][w][s].cost;
+                }
+            }
+        }
+        if (min_cost >= (FLT_MAX - FLT_EPSILON))
+        {
+            is_ok = 0;
+            break;
+        }
+        cost_threshold = min_cost + (1.0 - PRUNING_COEFF)
+                * (max_cost - min_cost) + FLT_EPSILON;
+        for (w = 0; w < data.words_number; w++)
+        {
+            for (s = 1; s <= data.words_sizes[w]; s++)
+            {
+                if (data.cells[t][w][s].cost > cost_threshold)
+                {
+                    data.cells[t][w][s].cost = FLT_MAX;
+                    remove_all_from_backtrack_pointer(data.cells[t][w][s].btp);
+                }
             }
         }
 
@@ -678,76 +720,63 @@ static int calculate_words_sequence_by_viterbi_matrix(
     return (n+1);
 }
 
-/*static int create_phonemes_sequence_by_transcription(
-        TTranscriptionNode transcription[], int transcription_length,
-        TTranscriptionNode phonemes_sequence[])
-{
-    int i, j, phonemes_sequence_length = 0;
-
-    for (i = 0; i < transcription_length; i++)
-    {
-        if (transcription[i].node_data > 0)
-        {
-            phonemes_sequence_length++;
-        }
-    }
-    if (phonemes_sequence_length <= 0)
-    {
-        return 0;
-    }
-    if (phonemes_sequence == NULL)
-    {
-        return phonemes_sequence_length;
-    }
-
-    j = 0;
-    for (i = 0; i < transcription_length; i++)
-    {
-        if (transcription[i].node_data > 0)
-        {
-            phonemes_sequence[j].node_data = transcription[i].node_data;
-            phonemes_sequence[j].probability = transcription[i].probability;
-            phonemes_sequence[j].start_time = 0;
-            phonemes_sequence[j].end_time = 0;
-            j++;
-        }
-    }
-
-    return phonemes_sequence_length;
-}*/
-
 static int create_phonemes_sequence_by_transcription(
         TTranscriptionNode transcription[], int transcription_length,
         int phonemes_sequence[], float phonemes_weights[])
 {
     int is_ok = 1;
-    int i, j, k, number_of_steps_20ms, phonemes_sequence_length = 0;
+    int start_ind = -1, end_ind = -1, i, j, k;
+    int number_of_steps_20ms, phonemes_sequence_length = 0;
+    float cur_phoneme_weight;
 
     for (i = 0; i < transcription_length; i++)
     {
-        if (transcription[i].node_data > 0)
-        {
-            number_of_steps_20ms = (transcription[i].end_time
-                                    - transcription[i].start_time) / 10000000;
-            if (number_of_steps_20ms < 1)
-            {
-                number_of_steps_20ms = 1;
-            }
-            phonemes_sequence_length += number_of_steps_20ms;
-        }
         if (transcription[i].probability <= 0.0)
         {
             is_ok = 0;
             break;
+        }
+        if (start_ind < 0)
+        {
+            if (transcription[i].node_data > 0)
+            {
+                start_ind = i;
+            }
+        }
+        else
+        {
+            if (transcription[i].node_data > 0)
+            {
+                end_ind = -1;
+            }
+            else
+            {
+                end_ind = i-1;
+            }
         }
     }
     if (!is_ok)
     {
         return -1;
     }
-    if (phonemes_sequence_length <= 0)
+    if (start_ind < 0)
     {
         return 0;
+    }
+    if (end_ind < 0)
+    {
+        end_ind = transcription_length - 1;
+    }
+
+    for (i = start_ind; i <= end_ind; i++)
+    {
+        number_of_steps_20ms = (transcription[i].end_time
+                                - transcription[i].start_time) / 10000000;
+        if (number_of_steps_20ms < 1)
+        {
+            number_of_steps_20ms = 1;
+        }
+        phonemes_sequence_length += number_of_steps_20ms;
     }
     if (phonemes_sequence == NULL)
     {
@@ -755,23 +784,21 @@ static int create_phonemes_sequence_by_transcription(
     }
 
     j = 0;
-    for (i = 0; i < transcription_length; i++)
+    for (i = start_ind; i <= end_ind; i++)
     {
-        if (transcription[i].node_data > 0)
+        number_of_steps_20ms = (transcription[i].end_time
+                                - transcription[i].start_time) / 10000000;
+        if (number_of_steps_20ms < 1)
         {
-            number_of_steps_20ms = (transcription[i].end_time
-                                    - transcription[i].start_time) / 10000000;
-            if (number_of_steps_20ms < 1)
-            {
-                number_of_steps_20ms = 1;
-            }
-            for (k = 0; k < number_of_steps_20ms; k++)
-            {
-                phonemes_sequence[j+k] = transcription[i].node_data;
-                phonemes_weights[j+k] = -log10(transcription[i].probability);
-            }
-            j += number_of_steps_20ms;
+            number_of_steps_20ms = 1;
         }
+        cur_phoneme_weight = -log10(transcription[i].probability);
+        for (k = 0; k < number_of_steps_20ms; k++)
+        {
+            phonemes_sequence[j+k] = transcription[i].node_data;
+            phonemes_weights[j+k] = cur_phoneme_weight;
+        }
+        j += number_of_steps_20ms;
     }
 
     return phonemes_sequence_length;
@@ -2457,7 +2484,7 @@ int create_linear_words_lexicon(
 {
     int words_lexicon_size = 0;
     int buffer_size = 0;
-    int word_index, phonemes_sequence_size = 0;
+    int word_index, phonemes_sequence_size = 0, n;
     int is_ok = 1;
     char buffer[BUFFER_SIZE];
     int phonemes_sequence[BUFFER_SIZE];
@@ -2511,12 +2538,13 @@ int create_linear_words_lexicon(
                     words_lexicon_size * sizeof(TLinearWordsLexicon));
         tmp_array = *linear_words_lexicon;
         tmp_array[words_lexicon_size-1].word_index = word_index;
-        tmp_array[words_lexicon_size-1].phonemes_number
-                = phonemes_sequence_size;
+        n = phonemes_sequence_size + 1;
+        tmp_array[words_lexicon_size-1].phonemes_number = n;
         tmp_array[words_lexicon_size-1].phonemes_indexes
-                = malloc(sizeof(int) * phonemes_sequence_size);
+                = malloc(sizeof(int) * n);
         memmove(tmp_array[words_lexicon_size-1].phonemes_indexes,
                 phonemes_sequence, phonemes_sequence_size * sizeof(int));
+        tmp_array[words_lexicon_size-1].phonemes_indexes[n-1] = 0;
     }
     fclose(vocabulary_file);
     if (!is_ok)

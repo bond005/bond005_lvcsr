@@ -13,5 +13,5 @@ HEADERS += \
     backtrack_pointers_lib.h \
     command_prompt_lib.h
 
-win32:QMAKE_CXXFLAGS += /fp:fast /Ox /arch:SSE2
-unix:QMAKE_CXXFLAGS += -O3 -march=native -mfpmath=sse -msse2 -funroll-loops -ffast-math
+win32:QMAKE_CFLAGS_RELEASE += /fp:fast /Ox /arch:SSE2
+unix:QMAKE_CFLAGS_RELEASE += -O3 -march=native -mfpmath=sse -msse2 -funroll-loops -ffast-math

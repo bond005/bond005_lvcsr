@@ -23,55 +23,61 @@ static TLinearWordsLexicon* create_target_words_lexicon()
     // word: 0
     // word phonemes: 2->5->1
     created_lexicon[0].word_index = 0;
-    created_lexicon[0].phonemes_number = 3;
-    created_lexicon[0].phonemes_indexes = malloc(3 * sizeof(int));
+    created_lexicon[0].phonemes_number = 3 + 1;
+    created_lexicon[0].phonemes_indexes = malloc((3 + 1) * sizeof(int));
     created_lexicon[0].phonemes_indexes[0] = 2;
     created_lexicon[0].phonemes_indexes[1] = 5;
     created_lexicon[0].phonemes_indexes[2] = 1;
+    created_lexicon[0].phonemes_indexes[3] = 0;
 
     // word: 1
     // word phonemes: 2->7
     created_lexicon[1].word_index = 1;
-    created_lexicon[1].phonemes_number = 2;
-    created_lexicon[1].phonemes_indexes = malloc(2 * sizeof(int));
+    created_lexicon[1].phonemes_number = 2 + 1;
+    created_lexicon[1].phonemes_indexes = malloc((2 + 1) * sizeof(int));
     created_lexicon[1].phonemes_indexes[0] = 2;
     created_lexicon[1].phonemes_indexes[1] = 7;
+    created_lexicon[1].phonemes_indexes[2] = 0;
 
     // word: 4
     // word phonemes: 3->6->2
     created_lexicon[2].word_index = 4;
-    created_lexicon[2].phonemes_number = 3;
-    created_lexicon[2].phonemes_indexes = malloc(3 * sizeof(int));
+    created_lexicon[2].phonemes_number = 3 + 1;
+    created_lexicon[2].phonemes_indexes = malloc((3 + 1) * sizeof(int));
     created_lexicon[2].phonemes_indexes[0] = 3;
     created_lexicon[2].phonemes_indexes[1] = 6;
     created_lexicon[2].phonemes_indexes[2] = 2;
+    created_lexicon[2].phonemes_indexes[3] = 0;
 
     // word: 3
     // word phonemes: 3->1
     created_lexicon[3].word_index = 3;
-    created_lexicon[3].phonemes_number = 2;
-    created_lexicon[3].phonemes_indexes = malloc(2 * sizeof(int));
+    created_lexicon[3].phonemes_number = 2 + 1;
+    created_lexicon[3].phonemes_indexes = malloc((2 + 1) * sizeof(int));
     created_lexicon[3].phonemes_indexes[0] = 3;
     created_lexicon[3].phonemes_indexes[1] = 1;
+    created_lexicon[3].phonemes_indexes[2] = 0;
 
 
     // word: 2
     // word phonemes: 3->1->2
     created_lexicon[4].word_index = 2;
-    created_lexicon[4].phonemes_number = 3;
-    created_lexicon[4].phonemes_indexes = malloc(3 * sizeof(int));
+    created_lexicon[4].phonemes_number = 3 + 1;
+    created_lexicon[4].phonemes_indexes = malloc((3 + 1) * sizeof(int));
     created_lexicon[4].phonemes_indexes[0] = 3;
     created_lexicon[4].phonemes_indexes[1] = 1;
     created_lexicon[4].phonemes_indexes[2] = 2;
+    created_lexicon[4].phonemes_indexes[3] = 0;
 
 
     // word: 5
     // word phonemes: 1->2
     created_lexicon[5].word_index = 5;
-    created_lexicon[5].phonemes_number = 2;
-    created_lexicon[5].phonemes_indexes = malloc(2 * sizeof(int));
+    created_lexicon[5].phonemes_number = 2 + 1;
+    created_lexicon[5].phonemes_indexes = malloc((2 + 1) * sizeof(int));
     created_lexicon[5].phonemes_indexes[0] = 1;
     created_lexicon[5].phonemes_indexes[1] = 2;
+    created_lexicon[5].phonemes_indexes[2] = 0;
 
     return created_lexicon;
 }
@@ -79,7 +85,12 @@ static TLinearWordsLexicon* create_target_words_lexicon()
 static void create_phonemes_vocabulary()
 {
     int i;
-    for (i = 0; i < phonemes_number; i++)
+    i = 0;
+    phonemes_vocabulary[i] = malloc(3 * sizeof(char));
+    phonemes_vocabulary[i][0] = '-';
+    phonemes_vocabulary[i][1] = '1';
+    phonemes_vocabulary[i][2] = 0;
+    for (i = 1; i < phonemes_number; i++)
     {
         phonemes_vocabulary[i] = malloc(2 * sizeof(char));
         phonemes_vocabulary[i][0] = (char)((int)'a' + i);

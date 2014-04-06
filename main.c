@@ -28,6 +28,7 @@
 int main(int argc, char *argv[])
 {
     int res = EXIT_SUCCESS;
+
     int mode = get_execution_mode(argc, argv);
     if (mode == emUNKNOWN)
     {

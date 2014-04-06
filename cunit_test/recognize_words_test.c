@@ -25,7 +25,7 @@ static TLanguageModel language_model;
 static float lambda = 1.0;
 static float incorrect_lambda_1 = -1.0;
 static float incorrect_lambda_2 = 1.5;
-static TMLFFilePart *src_mlf = NULL;
+static TMLFFilePart *src_mlf_1 = NULL, *src_mlf_2 = NULL;
 static TMLFFilePart *target_res_mlf = NULL;
 
 static int compare_two_MLF(TMLFFilePart *mlf1, int mlf1_size,
@@ -124,8 +124,10 @@ int prepare_for_testing_of_recognize_words()
         return 0;
     }
 
-    if ((NULL == CU_add_test(pSuite, "Valid partition",
+    if ((NULL == CU_add_test(pSuite, "Valid partition 1",
                              recognize_words_valid_test_1))
+            || (NULL == CU_add_test(pSuite, "Valid partition 2",
+                                    recognize_words_valid_test_2))
             || (NULL == CU_add_test(pSuite, "Invalid partitions",
                                     recognize_words_invalid_test_1)))
     {
@@ -154,21 +156,24 @@ int init_suite_recognize_words()
 
     words_lexicon = malloc(WORDS_VOCABULARY_SIZE*sizeof(TLinearWordsLexicon));
     words_lexicon[0].word_index = 0;
-    words_lexicon[0].phonemes_number = 2;
-    words_lexicon[0].phonemes_indexes = malloc(2*sizeof(int));
+    words_lexicon[0].phonemes_number = 2 + 1;
+    words_lexicon[0].phonemes_indexes = malloc((2 + 1) * sizeof(int));
     words_lexicon[0].phonemes_indexes[0] = 1;
     words_lexicon[0].phonemes_indexes[1] = 2;
+    words_lexicon[0].phonemes_indexes[2] = 0;
     words_lexicon[1].word_index = 1;
-    words_lexicon[1].phonemes_number = 2;
-    words_lexicon[1].phonemes_indexes = malloc(2*sizeof(int));
+    words_lexicon[1].phonemes_number = 2 + 1;
+    words_lexicon[1].phonemes_indexes = malloc((2 + 1) * sizeof(int));
     words_lexicon[1].phonemes_indexes[0] = 3;
     words_lexicon[1].phonemes_indexes[1] = 2;
+    words_lexicon[1].phonemes_indexes[2] = 0;
     words_lexicon[2].word_index = 2;
-    words_lexicon[2].phonemes_number = 3;
-    words_lexicon[2].phonemes_indexes = malloc(3*sizeof(int));
+    words_lexicon[2].phonemes_number = 3 + 1;
+    words_lexicon[2].phonemes_indexes = malloc((3 + 1) * sizeof(int));
     words_lexicon[2].phonemes_indexes[0] = 2;
     words_lexicon[2].phonemes_indexes[1] = 3;
     words_lexicon[2].phonemes_indexes[2] = 1;
+    words_lexicon[2].phonemes_indexes[3] = 0;
 
     language_model.unigrams_number = 3;
     language_model.unigrams_probabilities = malloc(3*sizeof(float));
@@ -197,40 +202,84 @@ int init_suite_recognize_words()
     language_model.bigrams[5].probability = 0.5;
 
     n = strlen(INP_MLF_PART_NAME);
-    src_mlf = malloc(sizeof(TMLFFilePart));
-    src_mlf[0].name = malloc((n+1) * sizeof(char));
-    memset(src_mlf[0].name, 0, (n+1) * sizeof(char));
-    strcpy(src_mlf[0].name, INP_MLF_PART_NAME);
-    src_mlf[0].transcription_size = 7;
-    src_mlf[0].transcription = malloc(7*sizeof(TTranscriptionNode));
-    src_mlf[0].transcription[0].start_time = 0;
-    src_mlf[0].transcription[0].end_time = 100000000;
-    src_mlf[0].transcription[0].node_data = 0;
-    src_mlf[0].transcription[0].probability = 0.9;
-    src_mlf[0].transcription[1].start_time = 100000000;
-    src_mlf[0].transcription[1].end_time = 150000000;
-    src_mlf[0].transcription[1].node_data = 1;
-    src_mlf[0].transcription[1].probability = 0.8;
-    src_mlf[0].transcription[2].start_time = 150000000;
-    src_mlf[0].transcription[2].end_time = 160000000;
-    src_mlf[0].transcription[2].node_data = 3;
-    src_mlf[0].transcription[2].probability = 0.6;
-    src_mlf[0].transcription[3].start_time = 160000000;
-    src_mlf[0].transcription[3].end_time = 190000000;
-    src_mlf[0].transcription[3].node_data = 2;
-    src_mlf[0].transcription[3].probability = 0.75;
-    src_mlf[0].transcription[4].start_time = 190000000;
-    src_mlf[0].transcription[4].end_time = 240000000;
-    src_mlf[0].transcription[4].node_data = 3;
-    src_mlf[0].transcription[4].probability = 0.9;
-    src_mlf[0].transcription[5].start_time = 240000000;
-    src_mlf[0].transcription[5].end_time = 260000000;
-    src_mlf[0].transcription[5].node_data = 1;
-    src_mlf[0].transcription[5].probability = 0.7;
-    src_mlf[0].transcription[6].start_time = 260000000;
-    src_mlf[0].transcription[6].end_time = 300000000;
-    src_mlf[0].transcription[6].node_data = 0;
-    src_mlf[0].transcription[6].probability = 0.9;
+    src_mlf_1 = malloc(sizeof(TMLFFilePart));
+    src_mlf_1[0].name = malloc((n+1) * sizeof(char));
+    memset(src_mlf_1[0].name, 0, (n+1) * sizeof(char));
+    strcpy(src_mlf_1[0].name, INP_MLF_PART_NAME);
+    src_mlf_1[0].transcription_size = 7;
+    src_mlf_1[0].transcription = malloc(7*sizeof(TTranscriptionNode));
+    src_mlf_1[0].transcription[0].start_time = 0;
+    src_mlf_1[0].transcription[0].end_time = 100000000;
+    src_mlf_1[0].transcription[0].node_data = 0;
+    src_mlf_1[0].transcription[0].probability = 0.9;
+    src_mlf_1[0].transcription[1].start_time = 100000000;
+    src_mlf_1[0].transcription[1].end_time = 150000000;
+    src_mlf_1[0].transcription[1].node_data = 1;
+    src_mlf_1[0].transcription[1].probability = 0.8;
+    src_mlf_1[0].transcription[2].start_time = 150000000;
+    src_mlf_1[0].transcription[2].end_time = 160000000;
+    src_mlf_1[0].transcription[2].node_data = 3;
+    src_mlf_1[0].transcription[2].probability = 0.6;
+    src_mlf_1[0].transcription[3].start_time = 160000000;
+    src_mlf_1[0].transcription[3].end_time = 190000000;
+    src_mlf_1[0].transcription[3].node_data = 2;
+    src_mlf_1[0].transcription[3].probability = 0.75;
+    src_mlf_1[0].transcription[4].start_time = 190000000;
+    src_mlf_1[0].transcription[4].end_time = 240000000;
+    src_mlf_1[0].transcription[4].node_data = 3;
+    src_mlf_1[0].transcription[4].probability = 0.9;
+    src_mlf_1[0].transcription[5].start_time = 240000000;
+    src_mlf_1[0].transcription[5].end_time = 260000000;
+    src_mlf_1[0].transcription[5].node_data = 1;
+    src_mlf_1[0].transcription[5].probability = 0.7;
+    src_mlf_1[0].transcription[6].start_time = 260000000;
+    src_mlf_1[0].transcription[6].end_time = 300000000;
+    src_mlf_1[0].transcription[6].node_data = 0;
+    src_mlf_1[0].transcription[6].probability = 0.9;
+
+    n = strlen(INP_MLF_PART_NAME);
+    src_mlf_2 = malloc(sizeof(TMLFFilePart));
+    src_mlf_2[0].name = malloc((n+1) * sizeof(char));
+    memset(src_mlf_2[0].name, 0, (n+1) * sizeof(char));
+    strcpy(src_mlf_2[0].name, INP_MLF_PART_NAME);
+    src_mlf_2[0].transcription_size = 9;
+    src_mlf_2[0].transcription = malloc(9*sizeof(TTranscriptionNode));
+    src_mlf_2[0].transcription[0].start_time = 0;
+    src_mlf_2[0].transcription[0].end_time = 100000000;
+    src_mlf_2[0].transcription[0].node_data = 0;
+    src_mlf_2[0].transcription[0].probability = 0.9;
+    src_mlf_2[0].transcription[1].start_time = 100000000;
+    src_mlf_2[0].transcription[1].end_time = 150000000;
+    src_mlf_2[0].transcription[1].node_data = 1;
+    src_mlf_2[0].transcription[1].probability = 0.8;
+    src_mlf_2[0].transcription[2].start_time = 150000000;
+    src_mlf_2[0].transcription[2].end_time = 160000000;
+    src_mlf_2[0].transcription[2].node_data = 3;
+    src_mlf_2[0].transcription[2].probability = 0.6;
+    src_mlf_2[0].transcription[3].start_time = 160000000;
+    src_mlf_2[0].transcription[3].end_time = 190000000;
+    src_mlf_2[0].transcription[3].node_data = 2;
+    src_mlf_2[0].transcription[3].probability = 0.75;
+    src_mlf_2[0].transcription[4].start_time = 190000000;
+    src_mlf_2[0].transcription[4].end_time = 280000000;
+    src_mlf_2[0].transcription[4].node_data = 0;
+    src_mlf_2[0].transcription[4].probability = 0.97;
+    src_mlf_2[0].transcription[5].start_time = 280000000;
+    src_mlf_2[0].transcription[5].end_time = 300000000;
+    src_mlf_2[0].transcription[5].node_data = 2;
+    src_mlf_2[0].transcription[5].probability = 0.83;
+    src_mlf_2[0].transcription[6].start_time = 300000000;
+    src_mlf_2[0].transcription[6].end_time = 350000000;
+    src_mlf_2[0].transcription[6].node_data = 3;
+    src_mlf_2[0].transcription[6].probability = 0.9;
+    src_mlf_2[0].transcription[7].start_time = 350000000;
+    src_mlf_2[0].transcription[7].end_time = 370000000;
+    src_mlf_2[0].transcription[7].node_data = 1;
+    src_mlf_2[0].transcription[7].probability = 0.7;
+    src_mlf_2[0].transcription[8].start_time = 370000000;
+    src_mlf_2[0].transcription[8].end_time = 410000000;
+    src_mlf_2[0].transcription[8].node_data = 0;
+    src_mlf_2[0].transcription[8].probability = 0.9;
 
     n = strlen(REC_MLF_PART_NAME);
     target_res_mlf = malloc(sizeof(TMLFFilePart));
@@ -255,7 +304,8 @@ int clean_suite_recognize_words()
 {
     free_language_model(&language_model);
     free_linear_words_lexicon(&words_lexicon, WORDS_VOCABULARY_SIZE);
-    free_MLF(&src_mlf, FILES_NUMBER);
+    free_MLF(&src_mlf_1, FILES_NUMBER);
+    free_MLF(&src_mlf_2, FILES_NUMBER);
     free_MLF(&target_res_mlf, FILES_NUMBER);
     return 0;
 }
@@ -265,7 +315,27 @@ void recognize_words_valid_test_1()
     TMLFFilePart *recognition_res = NULL;
     int is_ok = 0, is_equal = 0;
 
-    is_ok = recognize_words(src_mlf, FILES_NUMBER, PHONEMES_VOCABULARY_SIZE,
+    is_ok = recognize_words(src_mlf_1, FILES_NUMBER, PHONEMES_VOCABULARY_SIZE,
+                            confusion_penalties, WORDS_VOCABULARY_SIZE,
+                            words_lexicon, language_model, lambda,
+                            &recognition_res);
+    if (is_ok)
+    {
+        is_equal = compare_two_MLF(recognition_res, FILES_NUMBER,
+                                   target_res_mlf, FILES_NUMBER);
+    }
+    free_MLF(&recognition_res, FILES_NUMBER);
+
+    CU_ASSERT_TRUE_FATAL(is_ok);
+    CU_ASSERT_TRUE_FATAL(is_equal);
+}
+
+void recognize_words_valid_test_2()
+{
+    TMLFFilePart *recognition_res = NULL;
+    int is_ok = 0, is_equal = 0;
+
+    is_ok = recognize_words(src_mlf_2, FILES_NUMBER, PHONEMES_VOCABULARY_SIZE,
                             confusion_penalties, WORDS_VOCABULARY_SIZE,
                             words_lexicon, language_model, lambda,
                             &recognition_res);
@@ -295,63 +365,63 @@ void recognize_words_invalid_test_1()
     free_MLF(&recognition_res, FILES_NUMBER);
     CU_ASSERT_FALSE_FATAL(is_ok);
 
-    is_ok = recognize_words(src_mlf, 0, PHONEMES_VOCABULARY_SIZE,
+    is_ok = recognize_words(src_mlf_1, 0, PHONEMES_VOCABULARY_SIZE,
                             confusion_penalties, WORDS_VOCABULARY_SIZE,
                             words_lexicon, language_model, lambda,
                             &recognition_res);
     free_MLF(&recognition_res, FILES_NUMBER);
     CU_ASSERT_FALSE_FATAL(is_ok);
 
-    is_ok = recognize_words(src_mlf, FILES_NUMBER, 0,
+    is_ok = recognize_words(src_mlf_1, FILES_NUMBER, 0,
                             confusion_penalties, WORDS_VOCABULARY_SIZE,
                             words_lexicon, language_model, lambda,
                             &recognition_res);
     free_MLF(&recognition_res, FILES_NUMBER);
     CU_ASSERT_FALSE_FATAL(is_ok);
 
-    is_ok = recognize_words(src_mlf, FILES_NUMBER, PHONEMES_VOCABULARY_SIZE,
+    is_ok = recognize_words(src_mlf_1, FILES_NUMBER, PHONEMES_VOCABULARY_SIZE,
                             NULL, WORDS_VOCABULARY_SIZE,
                             words_lexicon, language_model, lambda,
                             &recognition_res);
     free_MLF(&recognition_res, FILES_NUMBER);
     CU_ASSERT_FALSE_FATAL(is_ok);
 
-    is_ok = recognize_words(src_mlf, FILES_NUMBER, PHONEMES_VOCABULARY_SIZE,
+    is_ok = recognize_words(src_mlf_1, FILES_NUMBER, PHONEMES_VOCABULARY_SIZE,
                             confusion_penalties, 0,
                             words_lexicon, language_model, lambda,
                             &recognition_res);
     free_MLF(&recognition_res, FILES_NUMBER);
     CU_ASSERT_FALSE_FATAL(is_ok);
 
-    is_ok = recognize_words(src_mlf, FILES_NUMBER, PHONEMES_VOCABULARY_SIZE,
+    is_ok = recognize_words(src_mlf_1, FILES_NUMBER, PHONEMES_VOCABULARY_SIZE,
                             confusion_penalties, WORDS_VOCABULARY_SIZE,
                             NULL, language_model, lambda,
                             &recognition_res);
     free_MLF(&recognition_res, FILES_NUMBER);
     CU_ASSERT_FALSE_FATAL(is_ok);
 
-    is_ok = recognize_words(src_mlf, FILES_NUMBER, PHONEMES_VOCABULARY_SIZE,
+    is_ok = recognize_words(src_mlf_1, FILES_NUMBER, PHONEMES_VOCABULARY_SIZE,
                             confusion_penalties, WORDS_VOCABULARY_SIZE,
                             words_lexicon, incorrect_model, lambda,
                             &recognition_res);
     free_MLF(&recognition_res, FILES_NUMBER);
     CU_ASSERT_FALSE_FATAL(is_ok);
 
-    is_ok = recognize_words(src_mlf, FILES_NUMBER, PHONEMES_VOCABULARY_SIZE,
+    is_ok = recognize_words(src_mlf_1, FILES_NUMBER, PHONEMES_VOCABULARY_SIZE,
                             confusion_penalties, WORDS_VOCABULARY_SIZE,
                             words_lexicon, language_model, incorrect_lambda_1,
                             &recognition_res);
     free_MLF(&recognition_res, FILES_NUMBER);
     CU_ASSERT_FALSE_FATAL(is_ok);
 
-    is_ok = recognize_words(src_mlf, FILES_NUMBER, PHONEMES_VOCABULARY_SIZE,
+    is_ok = recognize_words(src_mlf_1, FILES_NUMBER, PHONEMES_VOCABULARY_SIZE,
                             confusion_penalties, WORDS_VOCABULARY_SIZE,
                             words_lexicon, language_model, incorrect_lambda_2,
                             &recognition_res);
     free_MLF(&recognition_res, FILES_NUMBER);
     CU_ASSERT_FALSE_FATAL(is_ok);
 
-    is_ok = recognize_words(src_mlf, FILES_NUMBER, PHONEMES_VOCABULARY_SIZE,
+    is_ok = recognize_words(src_mlf_1, FILES_NUMBER, PHONEMES_VOCABULARY_SIZE,
                             confusion_penalties, WORDS_VOCABULARY_SIZE,
                             words_lexicon, language_model, lambda, NULL);
     CU_ASSERT_FALSE_FATAL(is_ok);
