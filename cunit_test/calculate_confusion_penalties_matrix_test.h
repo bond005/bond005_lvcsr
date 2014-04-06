@@ -1,0 +1,10 @@
+#ifndef CALCULATE_CONFUSION_PENALTIES_MATRIX_TEST_H
+#define CALCULATE_CONFUSION_PENALTIES_MATRIX_TEST_H
+
+int prepare_for_testing_of_calculate_confusion_penalties_matrix();
+int init_suite_calculate_confusion_penalties_matrix();
+int clean_suite_calculate_confusion_penalties_matrix();
+void calculate_confusion_penalties_matrix_valid_test_1();
+void calculate_confusion_penalties_matrix_invalid_test_1();
+
+#endif // CALCULATE_CONFUSION_PENALTIES_MATRIX_TEST_H

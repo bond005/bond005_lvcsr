@@ -5,9 +5,11 @@ CONFIG -= qt
 
 SOURCES += main.c \
     bond005_lvcsr_lib.c \
-    backtrack_pointers_lib.c
+    backtrack_pointers_lib.c \
+    command_prompt_lib.c
 
 HEADERS += \
     bond005_lvcsr_lib.h \
-    backtrack_pointers_lib.h
+    backtrack_pointers_lib.h \
+    command_prompt_lib.h
 

@@ -3,8 +3,8 @@
 
 #include "add_word_to_words_tree_test.h"
 #include "backtrack_pointers_test.h"
+#include "calculate_confusion_penalties_matrix_test.h"
 #include "calculate_language_model_test.h"
-#include "calculate_phonemes_probabilities_test.h"
 #include "create_linear_words_lexicon_test.h"
 #include "create_words_vocabulary_tree_test.h"
 #include "find_in_vocabulary_test.h"
@@ -107,7 +107,7 @@ int main()
     {
         return CU_get_error();
     }
-    if (!prepare_for_testing_of_calculate_phonemes_probabilities())
+    if (!prepare_for_testing_of_calculate_confusion_penalties_matrix())
     {
         return CU_get_error();
     }

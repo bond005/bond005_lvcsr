@@ -273,13 +273,14 @@ int save_words_MLF(char *mlf_name, char **words_vocabulary, int words_number,
  */
 int load_phonemes_vocabulary(char *file_name, char ***phonemes_vocabulary);
 
-/*! \fn int calculate_phonemes_probabilities(
- *        char *confusion_matrix_name, int phonemes_number,
- *         float phonemes_probabilities_matrix[])
+/*! \fn int calculate_confusion_penalties_matrix(
+ *         char *confusion_matrix_name, int phonemes_number,
+ *         float confusion_penalties_matrix[])
+ *
  * \brief This function loads the phonemes confusion matrix from the given file
- * and calculates the phonemes probabilities matrix on basis of loaded
- * confusion matrix. The confusion matrix using as source data in this function
- * is calculated usually by some phonemes recognizer.
+ * and calculates the matrix of penalties for phonemes confusion on basis of
+ * loaded confusion matrix. The confusion matrix using as source data in this
+ * function is calculated usually by some phonemes recognizer.
  *
  * \details It is basic function of this library. This function doesn't use any
  * additional functions of this library.
@@ -295,17 +296,17 @@ int load_phonemes_vocabulary(char *file_name, char ***phonemes_vocabulary);
  * \param phonemes_number Number of phonemes, i.e size of the phonemes
  * vocabulary.
  *
- * \param phonemes_probabilities_matrix It is quadratic matrix of
- * phonemes_number on phonemes_number in size. This matrix is unfolded by
- * rows. Each matrix line describes probabilities of confusing the
- * corresponding phoneme with other phonemes.
+ * \param confusion_penalties_matrix It is quadratic matrix of phonemes_number
+ * on phonemes_number in size. This matrix is unfolded by rows. Each matrix
+ * line describes penalties for mixing up the corresponding phoneme with other
+ * phonemes.
  *
  * \return This function returns 1 in case of successful work completion, or
  * it returns 0 in case of error.
  */
-int calculate_phonemes_probabilities(
+int calculate_confusion_penalties_matrix(
         char *confusion_matrix_name, int phonemes_number,
-        float phonemes_probabilities_matrix[]);
+        float confusion_penalties_matrix[]);
 
 /*! \fn int load_words_vocabulary(char *file_name, char ***words_vocabulary)
  *
@@ -408,7 +409,7 @@ int save_language_model(char *file_name, TLanguageModel language_model);
  * transcription.
  *
  * \param files_number The size of TMLFFilePart array, i.e. number of labels
- * files of which the MLF file will consist.
+ * files of which the MLF file consists.
  *
  * \param words_number The size of words vocabulary.
  *
@@ -620,14 +621,17 @@ float get_bigram_probability(TLanguageModel language_model, int start_word_ind,
 
 /*! \fn int recognize_words(
            TMLFFilePart *source_phonemes_MLF, int number_of_MLF_files,
-           int phonemes_number, float phonemes_probabilities[],
-           int words_number, TLinearWordsLexicon words_lexicon[],
+           int phonemes_vocabulary_size, float confusion_weights_matrix[],
+           int words_vocabulary_size, TLinearWordsLexicon words_lexicon[],
            TLanguageModel language_model, TMLFFilePart **result_words_MLF)
  *
  * \brief This function recognizes all words which are represented in source
  * sequences of phonemes. The recognition process is based on the linear words
  * lexicon, the matrix of a priori phonemes probabilities, and the bigram
  * language model.
+ *
+ * \details It is basic function of this library. This function doesn't use any
+ * additional function of this library.
  *
  * \param source_phonemes_MLF The array of parts of the source MLF file. One
  * part of the MLF file involves name of the some label file and phonemes
@@ -638,14 +642,14 @@ float get_bigram_probability(TLanguageModel language_model, int start_word_ind,
  * \param files_number The size of TMLFFilePart array, i.e. number of labels
  * files of which the source MLF file consists.
  *
- * \param phonemes_number The size of phonemes vocabulary.
+ * \param phonemes_vocabulary_size The size of phonemes vocabulary.
  *
- * \param phonemes_probabilities It is quadratic matrix of phonemes_number on
+ * \param confusion_penalties_matrix It is quadratic matrix of phonemes_number on
  * phonemes_number in size. This matrix is unfolded by rows. Each matrix line
- * describes probabilities of confusing the corresponding phoneme with other
+ * describes penalties for mixing up the corresponding phoneme with other
  * phonemes.
  *
- * \param words_number The size of words vocabulary.
+ * \param words_vocabulary_size The size of words vocabulary.
  *
  * \param words_lexicon The TLinearWordsLexicon array describing the used words
  * lexicon. Each node of words lexicon defines the word's index and word's
@@ -669,9 +673,65 @@ float get_bigram_probability(TLanguageModel language_model, int start_word_ind,
  */
 int recognize_words(
         TMLFFilePart *source_phonemes_MLF, int number_of_MLF_files,
-        int phonemes_number, float phonemes_probabilities[],
-        int words_number, TLinearWordsLexicon words_lexicon[],
+        int phonemes_vocabulary_size, float confusion_penalties_matrix[],
+        int words_vocabulary_size, TLinearWordsLexicon words_lexicon[],
         TLanguageModel language_model, TMLFFilePart **result_words_MLF);
+
+/*! \fn float estimate_error_rate(
+ *         TMLFFilePart recognized_MLF[], TMLFFilePart correct_MLF[],
+ *         int files_number, int *insertions,int *deletions,int *substitutions)
+ *
+ * \brief This function estimates the word recognition error rate (or phoneme
+ * recognition error rate) by means of comparing recognized sequence with
+ * correct sequence.
+ *
+ * \details This function calculates the minimal number of insertions,
+ * deletions and substitutions which are executed for adduction of the
+ * recognized sequence of words to the correct sequence of words (not only
+ * words, but also phonemes may be used as elements of compared sequences).
+ *
+ * Herein the insertions number is interpreted as number of extra words which
+ * were added in the recognized sequence, the deletions number is interpreted
+ * as number of correct words which were omitted in the recognized sequence,
+ * and the substitutions number is interpreted as number of incorrect words
+ * which were substituted for the correct words.
+ *
+ * After calculating number of insertions, deletions and substitutions this
+ * function estimates the word error rate using above mentioned computed data.
+ *
+ * It is basic function of this library. This function doesn't use any
+ * additional function of this library.
+ *
+ * \param recognized_MLF The TMLFFilePart array representing the recognized
+ * sequences of words or phonemes in the form of MLF data. Each item of this
+ * array describes the corresponding labels file involving the labels file name
+ * and the recognized words transcription (or phonemes transcription).
+ *
+ * \param correct_MLF The TMLFFilePart array representing the correct sequences
+ * of words or phonemes in the form of MLF data. Each item of this array
+ * describes the corresponding labels file involving the labels file name and
+ * the correct words transcription (or phonemes transcription).
+ *
+ * \param files_number The size of both TMLFFilePart arrays, i.e. number of
+ * labels files of which the each MLF file consists (both MLF files consist of
+ * same number of the labels files).
+ *
+ * \param insertions Pointer to the integer value into which the computed
+ * insertions number will be saved. This pointer may be NULL.
+ *
+ * \param deletions Pointer to the integer value into which the computed
+ * deletions number will be saved. This pointer may be NULL.
+ *
+ * \param substitutions Pointer to the integer value into which the computed
+ * substitutions number will be saved. This pointer may be NULL.
+ *
+ * \return This function returns computed word recognition error rate (or
+ * phoneme recognition error rate) in percentage terms. In case of error (for
+ * example, values of some arguments are incorrect) this function returns -1.0.
+ */
+float estimate_error_rate(
+        TMLFFilePart recognized_MLF[], TMLFFilePart correct_MLF[],
+        int files_number, int *insertions, int *deletions, int *substitutions);
 
 /*! \fn int read_string(FILE *read_file, char *str)
  *
