@@ -9,7 +9,8 @@
 #include "recognize_words_test.h"
 
 #define FILES_NUMBER 1
-#define MLF_PART_NAME "test_record.lab"
+#define INP_MLF_PART_NAME "test_record.lab"
+#define REC_MLF_PART_NAME "test_record.rec"
 #define PHONEMES_VOCABULARY_SIZE 4
 #define WORDS_VOCABULARY_SIZE 3
 
@@ -21,6 +22,9 @@ static float confusion_penalties[] = {
 };
 static TLinearWordsLexicon *words_lexicon = NULL;
 static TLanguageModel language_model;
+static float lambda = 1.0;
+static float incorrect_lambda_1 = -1.0;
+static float incorrect_lambda_2 = 1.5;
 static TMLFFilePart *src_mlf = NULL;
 static TMLFFilePart *target_res_mlf = NULL;
 
@@ -134,7 +138,8 @@ int prepare_for_testing_of_recognize_words()
 
 int init_suite_recognize_words()
 {
-    int i;
+    int i, n;
+
     for (i = 0; i < (PHONEMES_VOCABULARY_SIZE * PHONEMES_VOCABULARY_SIZE); i++)
     {
         if (confusion_penalties[i] > 0.0)
@@ -191,10 +196,11 @@ int init_suite_recognize_words()
     language_model.bigrams[5].second_word = 2;
     language_model.bigrams[5].probability = 0.5;
 
+    n = strlen(INP_MLF_PART_NAME);
     src_mlf = malloc(sizeof(TMLFFilePart));
-    src_mlf[0].name = malloc((strlen(MLF_PART_NAME)+1)*sizeof(char));
-    memset(src_mlf[0].name, 0, (strlen(MLF_PART_NAME)+1)*sizeof(char));
-    strcpy(src_mlf[0].name, MLF_PART_NAME);
+    src_mlf[0].name = malloc((n+1) * sizeof(char));
+    memset(src_mlf[0].name, 0, (n+1) * sizeof(char));
+    strcpy(src_mlf[0].name, INP_MLF_PART_NAME);
     src_mlf[0].transcription_size = 7;
     src_mlf[0].transcription = malloc(7*sizeof(TTranscriptionNode));
     src_mlf[0].transcription[0].start_time = 0;
@@ -226,10 +232,11 @@ int init_suite_recognize_words()
     src_mlf[0].transcription[6].node_data = 0;
     src_mlf[0].transcription[6].probability = 0.9;
 
+    n = strlen(REC_MLF_PART_NAME);
     target_res_mlf = malloc(sizeof(TMLFFilePart));
-    target_res_mlf[0].name = malloc((strlen(MLF_PART_NAME)+1)*sizeof(char));
-    memset(target_res_mlf[0].name, 0, (strlen(MLF_PART_NAME)+1)*sizeof(char));
-    strcpy(target_res_mlf[0].name, MLF_PART_NAME);
+    target_res_mlf[0].name = malloc((n+1) * sizeof(char));
+    memset(target_res_mlf[0].name, 0, (n+1) * sizeof(char));
+    strcpy(target_res_mlf[0].name, REC_MLF_PART_NAME);
     target_res_mlf[0].transcription_size = 2;
     target_res_mlf[0].transcription = malloc(2*sizeof(TTranscriptionNode));
     target_res_mlf[0].transcription[0].start_time = 0;
@@ -260,7 +267,8 @@ void recognize_words_valid_test_1()
 
     is_ok = recognize_words(src_mlf, FILES_NUMBER, PHONEMES_VOCABULARY_SIZE,
                             confusion_penalties, WORDS_VOCABULARY_SIZE,
-                            words_lexicon, language_model, &recognition_res);
+                            words_lexicon, language_model, lambda,
+                            &recognition_res);
     if (is_ok)
     {
         is_equal = compare_two_MLF(recognition_res, FILES_NUMBER,
@@ -282,48 +290,69 @@ void recognize_words_invalid_test_1()
 
     is_ok = recognize_words(NULL, FILES_NUMBER, PHONEMES_VOCABULARY_SIZE,
                             confusion_penalties, WORDS_VOCABULARY_SIZE,
-                            words_lexicon, language_model, &recognition_res);
+                            words_lexicon, language_model, lambda,
+                            &recognition_res);
     free_MLF(&recognition_res, FILES_NUMBER);
     CU_ASSERT_FALSE_FATAL(is_ok);
 
     is_ok = recognize_words(src_mlf, 0, PHONEMES_VOCABULARY_SIZE,
                             confusion_penalties, WORDS_VOCABULARY_SIZE,
-                            words_lexicon, language_model, &recognition_res);
+                            words_lexicon, language_model, lambda,
+                            &recognition_res);
     free_MLF(&recognition_res, FILES_NUMBER);
     CU_ASSERT_FALSE_FATAL(is_ok);
 
     is_ok = recognize_words(src_mlf, FILES_NUMBER, 0,
                             confusion_penalties, WORDS_VOCABULARY_SIZE,
-                            words_lexicon, language_model, &recognition_res);
+                            words_lexicon, language_model, lambda,
+                            &recognition_res);
     free_MLF(&recognition_res, FILES_NUMBER);
     CU_ASSERT_FALSE_FATAL(is_ok);
 
     is_ok = recognize_words(src_mlf, FILES_NUMBER, PHONEMES_VOCABULARY_SIZE,
                             NULL, WORDS_VOCABULARY_SIZE,
-                            words_lexicon, language_model, &recognition_res);
+                            words_lexicon, language_model, lambda,
+                            &recognition_res);
     free_MLF(&recognition_res, FILES_NUMBER);
     CU_ASSERT_FALSE_FATAL(is_ok);
 
     is_ok = recognize_words(src_mlf, FILES_NUMBER, PHONEMES_VOCABULARY_SIZE,
                             confusion_penalties, 0,
-                            words_lexicon, language_model, &recognition_res);
+                            words_lexicon, language_model, lambda,
+                            &recognition_res);
     free_MLF(&recognition_res, FILES_NUMBER);
     CU_ASSERT_FALSE_FATAL(is_ok);
 
     is_ok = recognize_words(src_mlf, FILES_NUMBER, PHONEMES_VOCABULARY_SIZE,
                             confusion_penalties, WORDS_VOCABULARY_SIZE,
-                            NULL, language_model, &recognition_res);
+                            NULL, language_model, lambda,
+                            &recognition_res);
     free_MLF(&recognition_res, FILES_NUMBER);
     CU_ASSERT_FALSE_FATAL(is_ok);
 
     is_ok = recognize_words(src_mlf, FILES_NUMBER, PHONEMES_VOCABULARY_SIZE,
                             confusion_penalties, WORDS_VOCABULARY_SIZE,
-                            words_lexicon, incorrect_model, &recognition_res);
+                            words_lexicon, incorrect_model, lambda,
+                            &recognition_res);
     free_MLF(&recognition_res, FILES_NUMBER);
     CU_ASSERT_FALSE_FATAL(is_ok);
 
     is_ok = recognize_words(src_mlf, FILES_NUMBER, PHONEMES_VOCABULARY_SIZE,
                             confusion_penalties, WORDS_VOCABULARY_SIZE,
-                            words_lexicon, language_model, NULL);
+                            words_lexicon, language_model, incorrect_lambda_1,
+                            &recognition_res);
+    free_MLF(&recognition_res, FILES_NUMBER);
+    CU_ASSERT_FALSE_FATAL(is_ok);
+
+    is_ok = recognize_words(src_mlf, FILES_NUMBER, PHONEMES_VOCABULARY_SIZE,
+                            confusion_penalties, WORDS_VOCABULARY_SIZE,
+                            words_lexicon, language_model, incorrect_lambda_2,
+                            &recognition_res);
+    free_MLF(&recognition_res, FILES_NUMBER);
+    CU_ASSERT_FALSE_FATAL(is_ok);
+
+    is_ok = recognize_words(src_mlf, FILES_NUMBER, PHONEMES_VOCABULARY_SIZE,
+                            confusion_penalties, WORDS_VOCABULARY_SIZE,
+                            words_lexicon, language_model, lambda, NULL);
     CU_ASSERT_FALSE_FATAL(is_ok);
 }

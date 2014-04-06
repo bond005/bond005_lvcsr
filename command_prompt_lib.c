@@ -31,8 +31,7 @@ int get_execution_mode(int argc, char *argv[])
 
 static int get_parameters_of_training(
         int argc, char *argv[], char **mlf_file_name,
-        char **words_vocabulary, float *lambda, float *eps,
-        char **language_model_name)
+        char **words_vocabulary, float *eps, char **language_model_name)
 {
     int i, n = 0, is_ok = 0;
 
@@ -83,28 +82,6 @@ static int get_parameters_of_training(
 
     for (i = 0; i < (argc-1); i++)
     {
-        if (strcmp(argv[i], "-lambda") == 0)
-        {
-            if (sscanf(argv[i+1], "%f", lambda) != 1)
-            {
-                break;
-            }
-            if ((*lambda < 0.0) || (*lambda > 1.0))
-            {
-                break;
-            }
-            is_ok = 1;
-            n++;
-            break;
-        }
-    }
-    if (!is_ok)
-    {
-        return 0;
-    }
-
-    for (i = 0; i < (argc-1); i++)
-    {
         if (strcmp(argv[i], "-eps") == 0)
         {
             if (sscanf(argv[i+1], "%f", eps) != 1)
@@ -131,7 +108,7 @@ static int get_parameters_of_training(
 static int get_parameters_of_testing(
         int argc,char *argv[], char **source_file_name,char **result_file_name,
         char **phonemes_vocabulary, char **confusion_matrix_name,
-        char **words_vocabulary, char **language_model_name)
+        char **words_vocabulary, char **language_model_name, float *lambda)
 {
     int i, n = 0, is_ok = 0;
 
@@ -225,6 +202,28 @@ static int get_parameters_of_testing(
         return 0;
     }
 
+    for (i = 0; i < (argc-1); i++)
+    {
+        if (strcmp(argv[i], "-lambda") == 0)
+        {
+            if (sscanf(argv[i+1], "%f", lambda) != 1)
+            {
+                break;
+            }
+            if ((*lambda < 0.0) || (*lambda > 1.0))
+            {
+                break;
+            }
+            is_ok = 1;
+            n++;
+            break;
+        }
+    }
+    if (!is_ok)
+    {
+        return 0;
+    }
+
     return ((n * 2) == (argc-2));
 }
 
@@ -287,7 +286,7 @@ int train_language_model_by_mlf_file(int argc, char *argv[])
     char *mlf_file_name = NULL;
     char *words_vocabulary_name = NULL;
     char *language_model_name = NULL;
-    float lambda = 1.0, eps = 0.0;
+    float eps = 0.0;
     TMLFFilePart *data = NULL;
     int files_number_in_MLF;
     char **words_vocabulary = NULL;
@@ -295,8 +294,8 @@ int train_language_model_by_mlf_file(int argc, char *argv[])
     TLanguageModel model;
 
     if (!get_parameters_of_training(
-                argc,argv, &mlf_file_name, &words_vocabulary_name, &lambda,
-                &eps, &language_model_name))
+                argc, argv, &mlf_file_name, &words_vocabulary_name, &eps,
+                &language_model_name))
     {
         fprintf(stderr, "Parameters of command prompt are incorrect.\n");
         return 0;
@@ -316,8 +315,8 @@ int train_language_model_by_mlf_file(int argc, char *argv[])
         fprintf(stderr, "The given MLF file cannot be loaded.\n");
         return 0;
     }
-    if (!calculate_language_model(data, files_number_in_MLF, words_number,
-                                  lambda, eps, &model))
+    if (!calculate_language_model(data, files_number_in_MLF, words_number, eps,
+                                  &model))
     {
         free_string_array(&words_vocabulary, words_number);
         free_MLF(&data, files_number_in_MLF);
@@ -353,12 +352,13 @@ int recognize_speech_by_mlf_file(int argc, char *argv[])
     int phonemes_number, words_number;
     TLinearWordsLexicon *words_lexicon = NULL;
     TLanguageModel language_model;
+    float lambda = 1.0;
     float *confusion_penalties_matrix = NULL;
 
     if (!get_parameters_of_testing(
                 argc, argv, &source_file_name, &result_file_name,
                 &phonemes_vocabulary_name, &confusion_matrix_name,
-                &words_vocabulary_name, &language_model_name))
+                &words_vocabulary_name, &language_model_name, &lambda))
     {
         fprintf(stderr, "Parameters of command prompt are incorrect.\n");
         return 0;
@@ -432,7 +432,7 @@ int recognize_speech_by_mlf_file(int argc, char *argv[])
     if (!recognize_words(
                 src_data, files_in_MLF, phonemes_number,
                 confusion_penalties_matrix, words_number, words_lexicon,
-                language_model, &res_data))
+                language_model, lambda, &res_data))
     {
         free_string_array(&phonemes_vocabulary, phonemes_number);
         free_string_array(&words_vocabulary, words_number);

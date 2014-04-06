@@ -31,7 +31,8 @@
 #include "bond005_lvcsr_lib.h"
 
 //#define __LVCSR_DEBUG__
-#define ACOUSTIC_PRUNING_THRESHOLD 0.1
+#define __LVCSR_MEMORY_CONTROL__
+#define PORTION_OF_PRUNED_HYPOTHESES 0.9
 
 /* Structure for representation of one cell of the matrix which is used in the
  * Viterbi Beam Search algorithm (see X.Huang, Spoken Language Processing,
@@ -53,6 +54,38 @@ typedef struct _TViterbiMatrix {
     TViterbiMatrixCell ***cells;/* 3-dimension matrix for the Viterbi Beam
                                    Search algorithm */
 } TViterbiMatrix;
+
+void set_new_file_extension(char src[], char extension[])
+{
+    int i, n, n_extension;
+    if ((src == NULL) || (extension == NULL))
+    {
+        return;
+    }
+    n_extension = strlen(extension);
+    n = strlen(src);
+    i = n-1;
+    while (i >= 0)
+    {
+        if (src[i] == '.')
+        {
+            break;
+        }
+        i--;
+    }
+    if (i >= 0)
+    {
+        i++;
+        memmove(&src[i], &extension[0], n_extension * sizeof(char));
+        src[i+n_extension] = 0;
+    }
+    else
+    {
+        src[n] = '.';
+        memmove(&src[n+1], &extension[0], n_extension * sizeof(char));
+        src[n+n_extension+1] = 0;
+    }
+}
 
 #ifdef __LVCSR_DEBUG__
 static void print_one_backtrack_pointer(PBacktrackPointer cur)
@@ -228,7 +261,7 @@ static void delete_viterbi_matrix(TViterbiMatrix* data)
     data->times_number = 0;
 }
 
-#ifdef __LVCSR_DEBUG__
+#ifdef __LVCSR_MEMORY_CONTROL__
 static void print_memory_for_backtrack_pointers(TViterbiMatrix data)
 {
     int t, w, s;
@@ -251,7 +284,7 @@ static void print_memory_for_backtrack_pointers(TViterbiMatrix data)
     printf("Size of memory allocated for backtrack pointers is %lu bytes.\n",
            bytes);
 }
-#endif //__LVCSR_DEBUG__
+#endif //__LVCSR_MEMORY_CONTROL__
 
 /* This function finds the bigram like "start_word_i->end_word_i" in the
  * language model. Starting position of search is specified by the
@@ -259,12 +292,12 @@ static void print_memory_for_backtrack_pointers(TViterbiMatrix data)
  * found bigram or 0 if the bigram isn't found. Also, specified starting
  * position of bigram search is being shifted from left to right in process of
  * this search, and such changing of starting position is saved. */
-static float find_bigram(TLanguageModel language_model, int start_word_i,
-                         int end_word_i, int *cur_bigram_i)
+static float find_bigram(TLanguageModel language_model, float lambda,
+                         int start_word_i, int end_word_i, int *cur_bigram_i)
 {
     int bigram_i = *cur_bigram_i;
     float bigram_probability = 0.0;
-    bigram_probability = 0.0;
+
     while (bigram_i < language_model.bigrams_number)
     {
         if (language_model.bigrams[bigram_i].second_word >= end_word_i)
@@ -298,6 +331,8 @@ static float find_bigram(TLanguageModel language_model, int start_word_i,
         }
     }
     *cur_bigram_i = bigram_i;
+    bigram_probability = lambda * bigram_probability + (1.0 - lambda)
+            * language_model.unigrams_probabilities[end_word_i];
     return bigram_probability;
 }
 
@@ -330,17 +365,18 @@ static int calculate_viterbi_matrix(
         TViterbiMatrix data,
         int src_phonemes_sequence[], float src_phonemes_weights[],
         int phonemes_vocabulary_size, float confusion_penalties[],
-        TLinearWordsLexicon words_lexicon[], TLanguageModel language_model)
+        TLinearWordsLexicon words_lexicon[], TLanguageModel language_model,
+        float lambda)
 {
     int is_ok = 1;
-#ifdef __LVCSR_DEBUG__
+#ifdef __LVCSR_MEMORY_CONTROL__
     int number_of_infinite_values = 0;
-#endif //__LVCSR_DEBUG__
-    int number_of_pruned_hypotheses = 0;
+    int number_of_normal_values = 0;
+#endif //__LVCSR_MEMORY_CONTROL__
     int bigram_i, inp_phoneme_i, trg_phoneme_i;
     int t_count, t = 0, w, s, S, i, v, v_min;
     float tmp_val1, tmp_val2, tmp_d, bigram_probability;
-    float pruning_threshold_cost;
+    float min_cost, max_cost, cost_threshold;
 
 #ifdef __LVCSR_DEBUG__
     printf("\n");
@@ -367,9 +403,11 @@ static int calculate_viterbi_matrix(
             data.cells[t][w][s].cost = FLT_MAX;
         }
     }
-#ifdef __LVCSR_DEBUG__
+#ifdef __LVCSR_MEMORY_CONTROL__
     printf("t = %d\n", t);
     print_memory_for_backtrack_pointers(data);
+#endif //__LVCSR_MEMORY_CONTROL__
+#ifdef __LVCSR_DEBUG__
     print_one_time_of_viterbi_matrix(data, 0);
 #endif //__LVCSR_DEBUG__
 
@@ -381,13 +419,13 @@ static int calculate_viterbi_matrix(
             t = 1;
             shift_viterbi_matrix(data);
         }
-#ifdef __LVCSR_DEBUG__
+#ifdef __LVCSR_MEMORY_CONTROL__
         if ((t_count % 10) == 0)
         {
             printf("t = %d\n", t_count);
             print_memory_for_backtrack_pointers(data);
         }
-#endif //__LVCSR_DEBUG__
+#endif //__LVCSR_MEMORY_CONTROL__
         inp_phoneme_i = src_phonemes_sequence[t_count];
         for (w = 0; w < data.words_number; w++)
         {
@@ -409,8 +447,15 @@ static int calculate_viterbi_matrix(
                 }
             }
             data.cells[t][w][s].cost = tmp_val1;
-            copy_backtrack_pointers(data.cells[t][w][s].btp,
-                                    data.cells[t-1][w][s].btp);
+            if (data.cells[t][w][s].cost < (FLT_MAX - FLT_EPSILON))
+            {
+                copy_backtrack_pointers(data.cells[t][w][s].btp,
+                                        data.cells[t-1][w][s].btp);
+            }
+            else
+            {
+                remove_all_from_backtrack_pointer(data.cells[t][w][s].btp);
+            }
 
             for (s = 2; s <= data.words_sizes[w]; s++)
             {
@@ -439,8 +484,16 @@ static int calculate_viterbi_matrix(
                 if (tmp_val1 <= tmp_val2)
                 {
                     data.cells[t][w][s].cost = tmp_val1;
-                    copy_backtrack_pointers(data.cells[t][w][s].btp,
-                                            data.cells[t-1][w][s].btp);
+                    if (tmp_val1 < (FLT_MAX - FLT_EPSILON))
+                    {
+                        copy_backtrack_pointers(data.cells[t][w][s].btp,
+                                                data.cells[t-1][w][s].btp);
+                    }
+                    else
+                    {
+                        remove_all_from_backtrack_pointer(
+                                    data.cells[t][w][s].btp);
+                    }
                 }
                 else
                 {
@@ -451,12 +504,52 @@ static int calculate_viterbi_matrix(
             }
         }
 
+        w = 0; s = 1;
+        min_cost = data.cells[t][w][s].cost;
+        max_cost = data.cells[t][w][s].cost;
+        for (w = 0; w < data.words_number; w++)
+        {
+            for (s = 1; s <= data.words_sizes[w]; s++)
+            {
+                if (data.cells[t][w][s].cost >= (FLT_MAX - FLT_EPSILON))
+                {
+                    continue;
+                }
+                if (data.cells[t][w][s].cost < min_cost)
+                {
+                    min_cost = data.cells[t][w][s].cost;
+                }
+                if (data.cells[t][w][s].cost > max_cost)
+                {
+                    max_cost = data.cells[t][w][s].cost;
+                }
+            }
+        }
+        if (min_cost >= (FLT_MAX - FLT_EPSILON))
+        {
+            is_ok = 0;
+            break;
+        }
+        cost_threshold = min_cost + 0.1 * (max_cost - min_cost) + FLT_EPSILON;
+        for (w = 0; w < data.words_number; w++)
+        {
+            for (s = 1; s <= data.words_sizes[w]; s++)
+            {
+                if (data.cells[t][w][s].cost > cost_threshold)
+                {
+                    data.cells[t][w][s].cost = FLT_MAX;
+                    remove_all_from_backtrack_pointer(data.cells[t][w][s].btp);
+                }
+            }
+        }
+
         bigram_i = 0;
         for (w = 0; w < data.words_number; w++)
         {
             v_min = 0;
             S = data.words_sizes[v_min];
-            bigram_probability=find_bigram(language_model,v_min,w,&bigram_i);
+            bigram_probability = find_bigram(language_model, lambda, v_min, w,
+                                             &bigram_i);
             if (bigram_probability > 0.0)
             {
                 tmp_val1 = -log10(bigram_probability);
@@ -476,7 +569,8 @@ static int calculate_viterbi_matrix(
             for (v = 1; v < data.words_number; v++)
             {
                 S = data.words_sizes[v];
-                bigram_probability = find_bigram(language_model,v,w,&bigram_i);
+                bigram_probability = find_bigram(language_model, lambda, v, w,
+                                                 &bigram_i);
                 if (bigram_probability > FLT_EPSILON)
                 {
                     tmp_val2 = -log10(bigram_probability);
@@ -514,59 +608,34 @@ static int calculate_viterbi_matrix(
             }
         }
 
-#ifdef __LVCSR_DEBUG__
-        number_of_infinite_values = 0;
-        for (w = 0; w < data.words_number; w++)
+#ifdef __LVCSR_MEMORY_CONTROL__
+        if ((t_count % 10) == 0)
         {
-            for (s = 1; s <= data.words_sizes[w]; s++)
-            {
-                if (data.cells[t][w][s].cost >= (FLT_MAX - FLT_EPSILON))
-                {
-                    number_of_infinite_values++;
-                }
-            }
-        }
-        print_one_time_of_viterbi_matrix(data, t);
-#endif //__LVCSR_DEBUG__
-        /*number_of_infinite_values = 0;
-        pruning_threshold_cost = data.cells[t][0][1].cost;
-        for (w = 0; w < data.words_number; w++)
-        {
-            for (s = 1; s <= data.words_sizes[w]; s++)
-            {
-                if (data.cells[t][w][s].cost < pruning_threshold_cost)
-                {
-                    pruning_threshold_cost = data.cells[t][w][s].cost;
-                }
-                if (data.cells[t][w][s].cost < (FLT_MAX - FLT_EPSILON))
-                {
-                    number_of_infinite_values++;
-                }
-            }
-        }
-        printf("Number of infinite values is %d.\n", number_of_infinite_values);
-        if (pruning_threshold_cost < (FLT_MAX - FLT_EPSILON))
-        {
-            pruning_threshold_cost -= log10(ACOUSTIC_PRUNING_THRESHOLD);
+            number_of_infinite_values = 0;
+            number_of_normal_values = 0;
             for (w = 0; w < data.words_number; w++)
             {
                 for (s = 1; s <= data.words_sizes[w]; s++)
                 {
-                    if (data.cells[t][w][s].cost > pruning_threshold_cost)
+                    if (data.cells[t][w][s].cost >= (FLT_MAX - FLT_EPSILON))
                     {
-                        number_of_pruned_hypotheses++;
-                        data.cells[t][w][s].cost = FLT_MAX;
-                        delete_backtrack_pointer(&(data.cells[t][w][s].btp));
+                        number_of_infinite_values++;
+                    }
+                    else
+                    {
+                        number_of_normal_values++;
                     }
                 }
             }
-            printf("Number of pruned hypotheses is %d.\n", number_of_pruned_hypotheses);
+            printf("The number of infinite values is %d.\n",
+                   number_of_infinite_values);
+            printf("The number of normal (finite) values is %d.\n",
+                   number_of_normal_values);
         }
-        else
-        {
-            is_ok = 0;
-            break;
-        }*/
+#endif //__LVCSR_MEMORY_CONTROL__
+#ifdef __LVCSR_DEBUG__
+        print_one_time_of_viterbi_matrix(data, t);
+#endif //__LVCSR_DEBUG__
     }
 
     return is_ok;
@@ -2126,18 +2195,15 @@ int save_language_model(char *file_name, TLanguageModel language_model)
 }*/
 
 int calculate_language_model(TMLFFilePart *words_mlf_data, int files_number,
-                             int words_number, float lambda, float eps,
+                             int words_number, float eps,
                              TLanguageModel *language_model)
 {
-    int i, j, k, word_index, bigram_index, is_ok = 1, total_words_count = 0;
-    int is_equal;
+    int i, j, word_index, bigram_index, is_ok = 1, total_words_count = 0;
     int reserved = 0;
     int *words_frequencies = NULL;
-    float bigram_probability;
 
     if ((words_mlf_data == NULL) || (files_number <= 0) || (words_number <= 0)
-            || (lambda < 0.0) || (lambda > 1.0) || (eps < 0.0) || (eps >= 1.0)
-            || (language_model == NULL))
+            || (eps < 0.0) || (eps >= 1.0) || (language_model == NULL))
     {
         return 0;
     }
@@ -2240,108 +2306,35 @@ int calculate_language_model(TMLFFilePart *words_mlf_data, int files_number,
         free(words_frequencies);
         return 0;
     }
-    for (i = 0; i < language_model->bigrams_number; i++)
+    i = 0;
+    while (i < language_model->bigrams_number)
     {
         language_model->bigrams[i].probability /= (float)words_frequencies[
                 language_model->bigrams[i].first_word];
-    }
-    qsort(language_model->bigrams, language_model->bigrams_number,
-          sizeof(TWordBigram), compare_bigrams);
-    bigram_index = 0;
-    for (i = 0; i < words_number; i++)
-    {
-        for (j = 0; j < words_number; j++)
+        if (language_model->bigrams[i].probability < eps)
         {
-            is_equal = 0;
-            while (bigram_index < language_model->bigrams_number)
+            if (i < (language_model->bigrams_number - 1))
             {
-                if (language_model->bigrams[bigram_index].second_word >= i)
-                {
-                    break;
-                }
-                bigram_index++;
+                memmove(&(language_model->bigrams[i]),
+                        &(language_model->bigrams[i+1]), sizeof(TWordBigram)
+                        * (language_model->bigrams_number-i-1));
             }
-            if (bigram_index < language_model->bigrams_number)
-            {
-                if (language_model->bigrams[bigram_index].second_word == i)
-                {
-                    while (bigram_index < language_model->bigrams_number)
-                    {
-                        if (language_model->bigrams[bigram_index].second_word
-                                != i)
-                        {
-                            break;
-                        }
-                        if (language_model->bigrams[bigram_index].first_word
-                                == j)
-                        {
-                            is_equal = 1;
-                            break;
-                        }
-                        if (language_model->bigrams[bigram_index].first_word
-                                > j)
-                        {
-                            break;
-                        }
-                        bigram_index++;
-                    }
-                }
-            }
-            if (is_equal)
-            {
-                bigram_probability = lambda
-                        * language_model->bigrams[bigram_index].probability
-                        + (1.0 - lambda)
-                        * language_model->unigrams_probabilities[i];
-                if (bigram_probability <= eps)
-                {
-                    for (k = bigram_index;
-                         k < (language_model->bigrams_number-1);
-                         k++)
-                    {
-                        language_model->bigrams[k]
-                                = language_model->bigrams[k+1];
-                    }
-                    language_model->bigrams_number--;
-                }
-                else
-                {
-                    language_model->bigrams[bigram_index].probability
-                            = bigram_probability;
-                }
-            }
-            else
-            {
-                bigram_probability = (1.0 - lambda)
-                        * language_model->unigrams_probabilities[i];
-                if (bigram_probability > eps)
-                {
-                    language_model->bigrams_number++;
-                    if (reserved < language_model->bigrams_number)
-                    {
-                        do {
-                            reserved += words_number;
-                        } while (reserved < language_model->bigrams_number);
-                        language_model->bigrams = realloc(
-                                    language_model->bigrams,
-                                    reserved * sizeof(TWordBigram));
-                    }
-                    for (k = language_model->bigrams_number-1;
-                         k > bigram_index;
-                         k--)
-                    {
-                        language_model->bigrams[k]
-                                = language_model->bigrams[k-1];
-                    }
-                    language_model->bigrams[bigram_index].first_word = j;
-                    language_model->bigrams[bigram_index].second_word = i;
-                    language_model->bigrams[bigram_index].probability
-                            = bigram_probability;
-                }
-            }
+            language_model->bigrams_number--;
+        }
+        else
+        {
+            i++;
         }
     }
+    free(words_frequencies);
+    if (language_model->bigrams_number <= 0)
+    {
+        free_language_model(language_model);
+        return 0;
+    }
 
+    qsort(language_model->bigrams, language_model->bigrams_number,
+          sizeof(TWordBigram), compare_bigrams);
     return 1;
 }
 
@@ -2763,7 +2756,8 @@ int recognize_words(
         TMLFFilePart *source_phonemes_MLF, int number_of_MLF_files,
         int phonemes_vocabulary_size, float confusion_penalties_matrix[],
         int words_vocabulary_size, TLinearWordsLexicon words_lexicon[],
-        TLanguageModel language_model, TMLFFilePart **result_words_MLF)
+        TLanguageModel language_model, float lambda,
+        TMLFFilePart **result_words_MLF)
 {
     int is_ok = 1;
     int i, j, n;
@@ -2782,7 +2776,8 @@ int recognize_words(
             || (language_model.unigrams_number != words_vocabulary_size)
             || (language_model.unigrams_probabilities == NULL)
             || (language_model.bigrams_number <= 0)
-            || (language_model.bigrams == NULL) || (result_words_MLF == NULL))
+            || (language_model.bigrams == NULL) || (result_words_MLF == NULL)
+            || (lambda < 0.0) || (lambda > 1.0))
     {
         return 0;
     }
@@ -2795,9 +2790,10 @@ int recognize_words(
         cur_result->transcription_size = 0;
         cur_result->transcription = NULL;
         n = strlen(cur_src->name);
-        cur_result->name = malloc((n+1)*sizeof(char));
-        memset(cur_result->name, 0, (n+1)*sizeof(char));
+        cur_result->name = malloc((n+5)*sizeof(char));
+        memset(cur_result->name, 0, (n+5)*sizeof(char));
         strcpy(cur_result->name, cur_src->name);
+        set_new_file_extension(cur_result->name, "rec");
         cur_result++;
         cur_src++;
     }
@@ -2830,7 +2826,7 @@ int recognize_words(
         if (!calculate_viterbi_matrix(
                     data, src_phonemes_sequence, src_phonemes_weights,
                     phonemes_vocabulary_size, confusion_penalties_matrix,
-                    words_lexicon, language_model))
+                    words_lexicon, language_model, lambda))
         {
             is_ok = 0;
         }
@@ -2900,7 +2896,7 @@ int recognize_words(
             if (!calculate_viterbi_matrix(
                         data, src_phonemes_sequence, src_phonemes_weights,
                         phonemes_vocabulary_size, confusion_penalties_matrix,
-                        words_lexicon, language_model))
+                        words_lexicon, language_model, lambda))
             {
                 is_ok = 0;
                 break;

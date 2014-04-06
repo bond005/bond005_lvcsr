@@ -390,7 +390,7 @@ int save_language_model(char *file_name, TLanguageModel language_model);
 
 /*! \fn int calculate_language_model(
  *         TMLFFilePart *words_mlf_data, int files_number, int words_number,
- *         float lambda, float eps, TLanguageModel *language_model)
+ *         float eps, TLanguageModel *language_model)
  *
  * \brief This function calculates language model (unigrams and bigrams) on
  * basis of the given MLF data containing words transcriptions. Each words
@@ -413,9 +413,6 @@ int save_language_model(char *file_name, TLanguageModel language_model);
  *
  * \param words_number The size of words vocabulary.
  *
- * \param lambda The coefficient which is used in the smoothing algorithm.
- * Value of this coefficient must be more or equal 0, and less or equal 1.
- *
  * \param eps The bottom threshold of bigram probability. All bigrams whose
  * probabilities is more or less than this threshold will not take part in
  * language model. Value of this threshold must be more or equal 0, and less 1.
@@ -429,7 +426,7 @@ int save_language_model(char *file_name, TLanguageModel language_model);
  * returns 0 in case of error.
  */
 int calculate_language_model(TMLFFilePart *words_mlf_data, int files_number,
-                             int words_number, float lambda, float eps,
+                             int words_number, float eps,
                              TLanguageModel *language_model);
 
 /*! \fn int create_words_vocabulary_tree(
@@ -620,10 +617,11 @@ float get_bigram_probability(TLanguageModel language_model, int start_word_ind,
                              int end_word_ind);
 
 /*! \fn int recognize_words(
-           TMLFFilePart *source_phonemes_MLF, int number_of_MLF_files,
-           int phonemes_vocabulary_size, float confusion_weights_matrix[],
-           int words_vocabulary_size, TLinearWordsLexicon words_lexicon[],
-           TLanguageModel language_model, TMLFFilePart **result_words_MLF)
+ *         TMLFFilePart *source_phonemes_MLF, int number_of_MLF_files,
+ *         int phonemes_vocabulary_size, float confusion_weights_matrix[],
+ *         int words_vocabulary_size, TLinearWordsLexicon words_lexicon[],
+ *         TLanguageModel language_model, float lambda,
+ *         TMLFFilePart **result_words_MLF)
  *
  * \brief This function recognizes all words which are represented in source
  * sequences of phonemes. The recognition process is based on the linear words
@@ -657,6 +655,10 @@ float get_bigram_probability(TLanguageModel language_model, int start_word_ind,
  *
  * \param language_model The language model which is used for recognition.
  *
+ * \param lambda The coefficient of language model smoothing which is used in
+ * the deleted interpolation smoothing algorithm. Value of this coefficient
+ * must be more or equal 0, and less or equal 1.
+ *
  * \param result_words_MLF It is pointer to array of parts of the words MLF
  * file. Each part of the words MLF file involves name of the some label file
  * and words transcription which is contained in this label file. In this
@@ -675,7 +677,8 @@ int recognize_words(
         TMLFFilePart *source_phonemes_MLF, int number_of_MLF_files,
         int phonemes_vocabulary_size, float confusion_penalties_matrix[],
         int words_vocabulary_size, TLinearWordsLexicon words_lexicon[],
-        TLanguageModel language_model, TMLFFilePart **result_words_MLF);
+        TLanguageModel language_model, float lambda,
+        TMLFFilePart **result_words_MLF);
 
 /*! \fn float estimate_error_rate(
  *         TMLFFilePart recognized_MLF[], TMLFFilePart correct_MLF[],
