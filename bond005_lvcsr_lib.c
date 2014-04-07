@@ -31,7 +31,7 @@
 #include "bond005_lvcsr_lib.h"
 
 //#define __LVCSR_DEBUG__
-#define __LVCSR_MEMORY_CONTROL__
+//#define __LVCSR_MEMORY_CONTROL__
 #define PRUNING_COEFF 0.5
 
 /* Structure for representation of one cell of the matrix which is used in the
@@ -165,7 +165,7 @@ static void create_viterbi_matrix(
             for (s = 0; s <= data->words_sizes[w]; s++)
             {
                 create_backtrack_pointer(&(data->cells[t][w][s].btp));
-                data->cells[t][w][s].cost = FLT_MAX;
+                data->cells[t][w][s].cost = -FLT_MAX;
             }
         }
     }
@@ -186,13 +186,13 @@ static void shift_viterbi_matrix(TViterbiMatrix data)
             data.cells[0][w][s].cost = data.cells[1][w][s].cost;
 
             remove_all_from_backtrack_pointer(data.cells[1][w][s].btp);
-            data.cells[1][w][s].cost = FLT_MAX;
+            data.cells[1][w][s].cost = -FLT_MAX;
         }
     }
 }
 
 /* This function initializes all cells of the given Viterbi matrix as follows:
- * FLT_MAX values will be assigned to all costs, and NULL values will be
+ * -FLT_MAX values will be assigned to all costs, and NULL values will be
  * assigned to all backtrack pointers (herewith memory allocated for these
  * backtrack pointers will be freed). */
 static void initialize_values_of_viterbi_matrix(TViterbiMatrix data)
@@ -212,7 +212,7 @@ static void initialize_values_of_viterbi_matrix(TViterbiMatrix data)
                 {
                     remove_all_from_backtrack_pointer(data.cells[t][w][s].btp);
                 }
-                data.cells[t][w][s].cost = FLT_MAX;
+                data.cells[t][w][s].cost = -FLT_MAX;
             }
         }
     }
@@ -349,7 +349,7 @@ static void print_one_time_of_viterbi_matrix(TViterbiMatrix data, int t)
         for (s = 0; s <= data.words_sizes[w]; s++)
         {
             printed_value = data.cells[t][w][s].cost;
-            if (printed_value < (FLT_MAX - FLT_EPSILON))
+            if (printed_value > (-FLT_MAX + FLT_EPSILON))
             {
                 printf("% 7.3f", printed_value);
             }
@@ -377,9 +377,9 @@ static int calculate_viterbi_matrix(
     int number_of_normal_values = 0;
 #endif //__LVCSR_MEMORY_CONTROL__
     int bigram_i, inp_phoneme_i, trg_phoneme_i;
-    int t_count, t = 0, w, s, S, i, v, v_min;
+    int t_count, t = 0, w, s, S, i, v, v_max;
     float tmp_val1, tmp_val2, tmp_d, bigram_probability;
-    float min_cost, max_cost, cost_threshold;
+    float max_cost, cost_threshold;
 
 #ifdef __LVCSR_DEBUG__
     printf("\n");
@@ -396,14 +396,14 @@ static int calculate_viterbi_matrix(
     {
         trg_phoneme_i = words_lexicon[w].phonemes_indexes[s-1];
         i = trg_phoneme_i * phonemes_vocabulary_size + inp_phoneme_i;
-        if (confusion_penalties[i] < (FLT_MAX - FLT_EPSILON))
+        if (confusion_penalties[i] > (-FLT_MAX + FLT_EPSILON))
         {
             data.cells[t][w][s].cost = src_phonemes_weights[t]
                     + confusion_penalties[i];
         }
         else
         {
-            data.cells[t][w][s].cost = FLT_MAX;
+            data.cells[t][w][s].cost = -FLT_MAX;
         }
     }
 #ifdef __LVCSR_MEMORY_CONTROL__
@@ -435,22 +435,22 @@ static int calculate_viterbi_matrix(
             s = 1;
             trg_phoneme_i = words_lexicon[w].phonemes_indexes[s-1];
             tmp_val1 = data.cells[t-1][w][s].cost;
-            if (tmp_val1 < (FLT_MAX - FLT_EPSILON))
+            if (tmp_val1 > (-FLT_MAX + FLT_EPSILON))
             {
                 tmp_d = src_phonemes_weights[t_count];
                 i = trg_phoneme_i * phonemes_vocabulary_size + inp_phoneme_i;
-                if (confusion_penalties[i] < (FLT_MAX - FLT_EPSILON))
+                if (confusion_penalties[i] > (-FLT_MAX + FLT_EPSILON))
                 {
                     tmp_d += confusion_penalties[i];
                     tmp_val1 += tmp_d;
                 }
                 else
                 {
-                    tmp_val1 = FLT_MAX;
+                    tmp_val1 = -FLT_MAX;
                 }
             }
             data.cells[t][w][s].cost = tmp_val1;
-            if (data.cells[t][w][s].cost < (FLT_MAX - FLT_EPSILON))
+            if (data.cells[t][w][s].cost > (-FLT_MAX + FLT_EPSILON))
             {
                 copy_backtrack_pointers(data.cells[t][w][s].btp,
                                         data.cells[t-1][w][s].btp);
@@ -465,29 +465,29 @@ static int calculate_viterbi_matrix(
                 trg_phoneme_i = words_lexicon[w].phonemes_indexes[s-1];
                 tmp_d = src_phonemes_weights[t_count];
                 i = trg_phoneme_i * phonemes_vocabulary_size + inp_phoneme_i;
-                if (confusion_penalties[i] < (FLT_MAX - FLT_EPSILON))
+                if (confusion_penalties[i] > (-FLT_MAX + FLT_EPSILON))
                 {
                     tmp_d += confusion_penalties[i];
                     tmp_val1 = data.cells[t-1][w][s].cost;
-                    if (tmp_val1 < (FLT_MAX - FLT_EPSILON))
+                    if (tmp_val1 > (-FLT_MAX + FLT_EPSILON))
                     {
                         tmp_val1 += tmp_d;
                     }
                     tmp_val2 = data.cells[t-1][w][s-1].cost;
-                    if (tmp_val2 < (FLT_MAX - FLT_EPSILON))
+                    if (tmp_val2 > (-FLT_MAX + FLT_EPSILON))
                     {
                         tmp_val2 += tmp_d;
                     }
                 }
                 else
                 {
-                    tmp_val1 = FLT_MAX;
-                    tmp_val2 = FLT_MAX;
+                    tmp_val1 = -FLT_MAX;
+                    tmp_val2 = -FLT_MAX;
                 }
-                if (tmp_val1 <= tmp_val2)
+                if (tmp_val1 >= tmp_val2)
                 {
                     data.cells[t][w][s].cost = tmp_val1;
-                    if (tmp_val1 < (FLT_MAX - FLT_EPSILON))
+                    if (tmp_val1 > (-FLT_MAX + FLT_EPSILON))
                     {
                         copy_backtrack_pointers(data.cells[t][w][s].btp,
                                                 data.cells[t-1][w][s].btp);
@@ -509,24 +509,24 @@ static int calculate_viterbi_matrix(
             s = data.words_sizes[w];
             tmp_val1 = data.cells[t][w][s-1].cost;
             tmp_val2 = data.cells[t-1][w][s].cost;
-            if (tmp_val2 < (FLT_MAX - FLT_EPSILON))
+            if (tmp_val2 > (-FLT_MAX + FLT_EPSILON))
             {
                 trg_phoneme_i = words_lexicon[w].phonemes_indexes[s-1];
                 tmp_d = src_phonemes_weights[t_count];
                 i = trg_phoneme_i * phonemes_vocabulary_size + inp_phoneme_i;
-                if (confusion_penalties[i] < (FLT_MAX - FLT_EPSILON))
+                if (confusion_penalties[i] > (-FLT_MAX + FLT_EPSILON))
                 {
                     tmp_val2 += (tmp_d + confusion_penalties[i]);
                 }
                 else
                 {
-                    tmp_val2 = FLT_MAX;
+                    tmp_val2 = -FLT_MAX;
                 }
             }
-            if (tmp_val1 <= tmp_val2)
+            if (tmp_val1 >= tmp_val2)
             {
                 data.cells[t][w][s].cost = tmp_val1;
-                if (tmp_val1 < (FLT_MAX - FLT_EPSILON))
+                if (tmp_val1 > (-FLT_MAX + FLT_EPSILON))
                 {
                     copy_backtrack_pointers(data.cells[t][w][s].btp,
                                             data.cells[t][w][s-1].btp);
@@ -548,25 +548,25 @@ static int calculate_viterbi_matrix(
         bigram_i = 0;
         for (w = 0; w < data.words_number; w++)
         {
-            v_min = 0;
-            S = data.words_sizes[v_min];
-            bigram_probability = find_bigram(language_model, lambda, v_min, w,
+            v_max = 0;
+            S = data.words_sizes[v_max];
+            bigram_probability = find_bigram(language_model, lambda, v_max, w,
                                              &bigram_i);
             if (bigram_probability > 0.0)
             {
-                tmp_val1 = -log10(bigram_probability);
-                if (data.cells[t][v_min][S].cost < (FLT_MAX - FLT_EPSILON))
+                tmp_val1 = log10(bigram_probability);
+                if (data.cells[t][v_max][S].cost > (-FLT_MAX + FLT_EPSILON))
                 {
-                    tmp_val1 += data.cells[t][v_min][S].cost;
+                    tmp_val1 += data.cells[t][v_max][S].cost;
                 }
                 else
                 {
-                    tmp_val1 = FLT_MAX;
+                    tmp_val1 = -FLT_MAX;
                 }
             }
             else
             {
-                tmp_val1 = FLT_MAX;
+                tmp_val1 = -FLT_MAX;
             }
             for (v = 1; v < data.words_number; v++)
             {
@@ -575,23 +575,23 @@ static int calculate_viterbi_matrix(
                                                  &bigram_i);
                 if (bigram_probability > FLT_EPSILON)
                 {
-                    tmp_val2 = -log10(bigram_probability);
-                    if (data.cells[t][v][S].cost < (FLT_MAX - FLT_EPSILON))
+                    tmp_val2 = log10(bigram_probability);
+                    if (data.cells[t][v][S].cost > (-FLT_MAX + FLT_EPSILON))
                     {
                         tmp_val2 += data.cells[t][v][S].cost;
                     }
                     else
                     {
-                        tmp_val2 = FLT_MAX;
+                        tmp_val2 = -FLT_MAX;
                     }
                 }
                 else
                 {
-                    tmp_val2 = FLT_MAX;
+                    tmp_val2 = -FLT_MAX;
                 }
-                if (tmp_val2 < tmp_val1)
+                if (tmp_val2 > tmp_val1)
                 {
-                    v_min = v;
+                    v_max = v;
                     tmp_val1 = tmp_val2;
                 }
             }
@@ -599,10 +599,10 @@ static int calculate_viterbi_matrix(
             data.cells[t][w][0].cost = tmp_val1;
             copy_backtrack_pointers(
                         data.cells[t][w][0].btp,
-                        data.cells[t][v_min][data.words_sizes[v_min]].btp);
-            add_to_backtrack_pointer(data.cells[t][w][0].btp, v_min, t_count);
+                        data.cells[t][v_max][data.words_sizes[v_max]].btp);
+            add_to_backtrack_pointer(data.cells[t][w][0].btp, v_max, t_count);
 
-            if (data.cells[t][w][0].cost < data.cells[t][w][1].cost)
+            if (data.cells[t][w][0].cost > data.cells[t][w][1].cost)
             {
                 data.cells[t][w][1].cost = data.cells[t][w][0].cost;
                 copy_backtrack_pointers(data.cells[t][w][1].btp,
@@ -611,19 +611,14 @@ static int calculate_viterbi_matrix(
         }
 
         w = 0; s = 1;
-        min_cost = data.cells[t][w][s].cost;
         max_cost = data.cells[t][w][s].cost;
         for (w = 0; w < data.words_number; w++)
         {
             for (s = 1; s <= data.words_sizes[w]; s++)
             {
-                if (data.cells[t][w][s].cost >= (FLT_MAX - FLT_EPSILON))
+                if (data.cells[t][w][s].cost <= (-FLT_MAX + FLT_EPSILON))
                 {
                     continue;
-                }
-                if (data.cells[t][w][s].cost < min_cost)
-                {
-                    min_cost = data.cells[t][w][s].cost;
                 }
                 if (data.cells[t][w][s].cost > max_cost)
                 {
@@ -631,20 +626,19 @@ static int calculate_viterbi_matrix(
                 }
             }
         }
-        if (min_cost >= (FLT_MAX - FLT_EPSILON))
+        if (max_cost <= (-FLT_MAX + FLT_EPSILON))
         {
             is_ok = 0;
             break;
         }
-        cost_threshold = min_cost + (1.0 - PRUNING_COEFF)
-                * (max_cost - min_cost) + FLT_EPSILON;
+        cost_threshold = max_cost + log10(PRUNING_COEFF);
         for (w = 0; w < data.words_number; w++)
         {
             for (s = 1; s <= data.words_sizes[w]; s++)
             {
-                if (data.cells[t][w][s].cost > cost_threshold)
+                if (data.cells[t][w][s].cost < cost_threshold)
                 {
-                    data.cells[t][w][s].cost = FLT_MAX;
+                    data.cells[t][w][s].cost = -FLT_MAX;
                     remove_all_from_backtrack_pointer(data.cells[t][w][s].btp);
                 }
             }
@@ -659,7 +653,7 @@ static int calculate_viterbi_matrix(
             {
                 for (s = 1; s <= data.words_sizes[w]; s++)
                 {
-                    if (data.cells[t][w][s].cost >= (FLT_MAX - FLT_EPSILON))
+                    if (data.cells[t][w][s].cost <= (-FLT_MAX + FLT_EPSILON))
                     {
                         number_of_infinite_values++;
                     }
@@ -686,20 +680,20 @@ static int calculate_viterbi_matrix(
 static int calculate_words_sequence_by_viterbi_matrix(
         TViterbiMatrix data, int recognized_words_sequence[])
 {
-    int t, w, w_min, i, n, S;
+    int t, w, w_max, i, n, S;
 
     t = (data.times_number < 2) ? (data.times_number - 1) : 1;
-    w_min = 0;
+    w_max = 0;
     for (w = 1; w < data.words_number; w++)
     {
         if (data.cells[t][w][data.words_sizes[w]].cost
-                < data.cells[t][w_min][data.words_sizes[w_min]].cost)
+                > data.cells[t][w_max][data.words_sizes[w_max]].cost)
         {
-            w_min = w;
+            w_max = w;
         }
     }
 #ifdef __LVCSR_DEBUG__
-    printf("w_min = %d\n", w_min);
+    printf("w_max = %d\n", w_max);
     printf("t = last\n");
     print_backtrack_pointers(data, t);
     if (t > 0)
@@ -709,13 +703,13 @@ static int calculate_words_sequence_by_viterbi_matrix(
     }
 #endif //__LVCSR_DEBUG__
 
-    S = data.words_sizes[w_min];
-    n = data.cells[t][w_min][S].btp->size;
+    S = data.words_sizes[w_max];
+    n = data.cells[t][w_max][S].btp->size;
     for (i = 0; i < n; i++)
     {
-        recognized_words_sequence[i] = data.cells[t][w_min][0].btp->words[i];
+        recognized_words_sequence[i] = data.cells[t][w_max][0].btp->words[i];
     }
-    recognized_words_sequence[n] = w_min;
+    recognized_words_sequence[n] = w_max;
 
     return (n+1);
 }
@@ -792,7 +786,7 @@ static int create_phonemes_sequence_by_transcription(
         {
             number_of_steps_20ms = 1;
         }
-        cur_phoneme_weight = -log10(transcription[i].probability);
+        cur_phoneme_weight = log10(transcription[i].probability);
         for (k = 0; k < number_of_steps_20ms; k++)
         {
             phonemes_sequence[j+k] = transcription[i].node_data;
@@ -1879,11 +1873,11 @@ int calculate_confusion_penalties_matrix(
             if (confusion_penalties_matrix[index] > 0.0)
             {
                 confusion_penalties_matrix[index]
-                        = -log10(confusion_penalties_matrix[index]);
+                        = log10(confusion_penalties_matrix[index]);
             }
             else
             {
-                confusion_penalties_matrix[index] = FLT_MAX;
+                confusion_penalties_matrix[index] = -FLT_MAX;
             }
         }
     }

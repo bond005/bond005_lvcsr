@@ -106,11 +106,11 @@ int init_suite_calculate_confusion_penalties_matrix()
         if (target_confusion_penalties_matrix[i] > 0.0)
         {
             target_confusion_penalties_matrix[i]
-                    = -log10(target_confusion_penalties_matrix[i]);
+                    = log10(target_confusion_penalties_matrix[i]);
         }
         else
         {
-            target_confusion_penalties_matrix[i] = FLT_MAX;
+            target_confusion_penalties_matrix[i] = -FLT_MAX;
         }
     }
     return (save_confusion_matrix_for_testing() ? 0 : -1);

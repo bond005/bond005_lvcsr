@@ -146,11 +146,11 @@ int init_suite_recognize_words()
     {
         if (confusion_penalties[i] > 0.0)
         {
-            confusion_penalties[i] = -log10(confusion_penalties[i]);
+            confusion_penalties[i] = log10(confusion_penalties[i]);
         }
         else
         {
-            confusion_penalties[i] = FLT_MAX;
+            confusion_penalties[i] = -FLT_MAX;
         }
     }
 
