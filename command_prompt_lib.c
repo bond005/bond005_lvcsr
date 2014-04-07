@@ -108,7 +108,8 @@ static int get_parameters_of_training(
 static int get_parameters_of_testing(
         int argc,char *argv[], char **source_file_name,char **result_file_name,
         char **phonemes_vocabulary, char **confusion_matrix_name,
-        char **words_vocabulary, char **language_model_name, float *lambda)
+        char **words_vocabulary, float *pruning_coeff,
+        char **language_model_name, float *lambda)
 {
     int i, n = 0, is_ok = 0;
 
@@ -211,6 +212,28 @@ static int get_parameters_of_testing(
                 break;
             }
             if ((*lambda < 0.0) || (*lambda > 1.0))
+            {
+                break;
+            }
+            is_ok = 1;
+            n++;
+            break;
+        }
+    }
+    if (!is_ok)
+    {
+        return 0;
+    }
+
+    for (i = 0; i < (argc-1); i++)
+    {
+        if (strcmp(argv[i], "-pr") == 0)
+        {
+            if (sscanf(argv[i+1], "%f", pruning_coeff) != 1)
+            {
+                break;
+            }
+            if ((*pruning_coeff < 0.0) || (*pruning_coeff > 1.0))
             {
                 break;
             }
@@ -352,13 +375,14 @@ int recognize_speech_by_mlf_file(int argc, char *argv[])
     int phonemes_number, words_number;
     TLinearWordsLexicon *words_lexicon = NULL;
     TLanguageModel language_model;
-    float lambda = 1.0;
+    float lambda = 1.0, pruning_coeff = 0.0;
     float *confusion_penalties_matrix = NULL;
 
     if (!get_parameters_of_testing(
                 argc, argv, &source_file_name, &result_file_name,
                 &phonemes_vocabulary_name, &confusion_matrix_name,
-                &words_vocabulary_name, &language_model_name, &lambda))
+                &words_vocabulary_name, &pruning_coeff, &language_model_name,
+                &lambda))
     {
         fprintf(stderr, "Parameters of command prompt are incorrect.\n");
         return 0;
@@ -432,7 +456,7 @@ int recognize_speech_by_mlf_file(int argc, char *argv[])
     if (!recognize_words(
                 src_data, files_in_MLF, phonemes_number,
                 confusion_penalties_matrix, words_number, words_lexicon,
-                language_model, lambda, &res_data))
+                pruning_coeff, language_model, lambda, &res_data))
     {
         free_string_array(&phonemes_vocabulary, phonemes_number);
         free_string_array(&words_vocabulary, words_number);

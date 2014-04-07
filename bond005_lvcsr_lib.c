@@ -32,7 +32,6 @@
 
 //#define __LVCSR_DEBUG__
 //#define __LVCSR_MEMORY_CONTROL__
-#define PRUNING_COEFF 0.5
 
 /* Structure for representation of one cell of the matrix which is used in the
  * Viterbi Beam Search algorithm (see X.Huang, Spoken Language Processing,
@@ -368,8 +367,8 @@ static int calculate_viterbi_matrix(
         TViterbiMatrix data,
         int src_phonemes_sequence[], float src_phonemes_weights[],
         int phonemes_vocabulary_size, float confusion_penalties[],
-        TLinearWordsLexicon words_lexicon[], TLanguageModel language_model,
-        float lambda)
+        TLinearWordsLexicon words_lexicon[], float pruning_coeff,
+        TLanguageModel language_model, float lambda)
 {
     int is_ok = 1;
 #ifdef __LVCSR_MEMORY_CONTROL__
@@ -610,36 +609,40 @@ static int calculate_viterbi_matrix(
             }
         }
 
-        w = 0; s = 1;
-        max_cost = data.cells[t][w][s].cost;
-        for (w = 0; w < data.words_number; w++)
+        if (pruning_coeff > 0.0)
         {
-            for (s = 1; s <= data.words_sizes[w]; s++)
+            w = 0; s = 1;
+            max_cost = data.cells[t][w][s].cost;
+            for (w = 0; w < data.words_number; w++)
             {
-                if (data.cells[t][w][s].cost <= (-FLT_MAX + FLT_EPSILON))
+                for (s = 1; s <= data.words_sizes[w]; s++)
                 {
-                    continue;
-                }
-                if (data.cells[t][w][s].cost > max_cost)
-                {
-                    max_cost = data.cells[t][w][s].cost;
+                    if (data.cells[t][w][s].cost <= (-FLT_MAX + FLT_EPSILON))
+                    {
+                        continue;
+                    }
+                    if (data.cells[t][w][s].cost > max_cost)
+                    {
+                        max_cost = data.cells[t][w][s].cost;
+                    }
                 }
             }
-        }
-        if (max_cost <= (-FLT_MAX + FLT_EPSILON))
-        {
-            is_ok = 0;
-            break;
-        }
-        cost_threshold = max_cost + log10(PRUNING_COEFF);
-        for (w = 0; w < data.words_number; w++)
-        {
-            for (s = 1; s <= data.words_sizes[w]; s++)
+            if (max_cost <= (-FLT_MAX + FLT_EPSILON))
             {
-                if (data.cells[t][w][s].cost < cost_threshold)
+                is_ok = 0;
+                break;
+            }
+            cost_threshold = max_cost + log10(pruning_coeff);
+            for (w = 0; w < data.words_number; w++)
+            {
+                for (s = 1; s <= data.words_sizes[w]; s++)
                 {
-                    data.cells[t][w][s].cost = -FLT_MAX;
-                    remove_all_from_backtrack_pointer(data.cells[t][w][s].btp);
+                    if (data.cells[t][w][s].cost < cost_threshold)
+                    {
+                        data.cells[t][w][s].cost = -FLT_MAX;
+                        remove_all_from_backtrack_pointer(
+                                    data.cells[t][w][s].btp);
+                    }
                 }
             }
         }
@@ -2778,7 +2781,7 @@ int recognize_words(
         TMLFFilePart *source_phonemes_MLF, int number_of_MLF_files,
         int phonemes_vocabulary_size, float confusion_penalties_matrix[],
         int words_vocabulary_size, TLinearWordsLexicon words_lexicon[],
-        TLanguageModel language_model, float lambda,
+        float pruning_coeff, TLanguageModel language_model, float lambda,
         TMLFFilePart **result_words_MLF)
 {
     int is_ok = 1;
@@ -2795,6 +2798,7 @@ int recognize_words(
             || (phonemes_vocabulary_size <= 0)
             || (confusion_penalties_matrix == NULL)
             || (words_vocabulary_size <= 0) || (words_lexicon == NULL)
+            || (pruning_coeff < 0.0) || (pruning_coeff > 1.0)
             || (language_model.unigrams_number != words_vocabulary_size)
             || (language_model.unigrams_probabilities == NULL)
             || (language_model.bigrams_number <= 0)
@@ -2848,7 +2852,7 @@ int recognize_words(
         if (!calculate_viterbi_matrix(
                     data, src_phonemes_sequence, src_phonemes_weights,
                     phonemes_vocabulary_size, confusion_penalties_matrix,
-                    words_lexicon, language_model, lambda))
+                    words_lexicon, pruning_coeff, language_model, lambda))
         {
             is_ok = 0;
         }
@@ -2918,7 +2922,7 @@ int recognize_words(
             if (!calculate_viterbi_matrix(
                         data, src_phonemes_sequence, src_phonemes_weights,
                         phonemes_vocabulary_size, confusion_penalties_matrix,
-                        words_lexicon, language_model, lambda))
+                        words_lexicon, pruning_coeff, language_model, lambda))
             {
                 is_ok = 0;
                 break;

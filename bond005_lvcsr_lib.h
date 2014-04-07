@@ -653,6 +653,10 @@ float get_bigram_probability(TLanguageModel language_model, int start_word_ind,
  * lexicon. Each node of words lexicon defines the word's index and word's
  * phonetic transcription.
  *
+ * \param pruning_coeff The coefficient of acoustic pruning which is used in
+ * the Viterbi beam search algorithm. Value of this coefficient must be more or
+ * equal 0, and less or equal 1.
+ *
  * \param language_model The language model which is used for recognition.
  *
  * \param lambda The coefficient of language model smoothing which is used in
@@ -677,7 +681,7 @@ int recognize_words(
         TMLFFilePart *source_phonemes_MLF, int number_of_MLF_files,
         int phonemes_vocabulary_size, float confusion_penalties_matrix[],
         int words_vocabulary_size, TLinearWordsLexicon words_lexicon[],
-        TLanguageModel language_model, float lambda,
+        float pruning_coeff, TLanguageModel language_model, float lambda,
         TMLFFilePart **result_words_MLF);
 
 /*! \fn float estimate_error_rate(
