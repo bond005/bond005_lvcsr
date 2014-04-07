@@ -50,6 +50,7 @@ static int get_parameters_of_training(
         return 0;
     }
 
+    is_ok = 0;
     for (i = 0; i < (argc-1); i++)
     {
         if (strcmp(argv[i], "-words") == 0)
@@ -65,6 +66,7 @@ static int get_parameters_of_training(
         return 0;
     }
 
+    is_ok = 0;
     for (i = 0; i < (argc-1); i++)
     {
         if (strcmp(argv[i], "-lang") == 0)
@@ -80,6 +82,7 @@ static int get_parameters_of_training(
         return 0;
     }
 
+    is_ok = 0;
     for (i = 0; i < (argc-1); i++)
     {
         if (strcmp(argv[i], "-eps") == 0)
@@ -128,6 +131,7 @@ static int get_parameters_of_testing(
         return 0;
     }
 
+    is_ok = 0;
     for (i = 0; i < (argc-1); i++)
     {
         if (strcmp(argv[i], "-res") == 0)
@@ -143,6 +147,7 @@ static int get_parameters_of_testing(
         return 0;
     }
 
+    is_ok = 0;
     for (i = 0; i < (argc-1); i++)
     {
         if (strcmp(argv[i], "-phonemes") == 0)
@@ -158,6 +163,7 @@ static int get_parameters_of_testing(
         return 0;
     }
 
+    is_ok = 0;
     for (i = 0; i < (argc-1); i++)
     {
         if (strcmp(argv[i], "-words") == 0)
@@ -173,6 +179,7 @@ static int get_parameters_of_testing(
         return 0;
     }
 
+    is_ok = 0;
     for (i = 0; i < (argc-1); i++)
     {
         if (strcmp(argv[i], "-conf") == 0)
@@ -188,6 +195,7 @@ static int get_parameters_of_testing(
         return 0;
     }
 
+    is_ok = 0;
     for (i = 0; i < (argc-1); i++)
     {
         if (strcmp(argv[i], "-lang") == 0)
@@ -203,6 +211,7 @@ static int get_parameters_of_testing(
         return 0;
     }
 
+    is_ok = 0;
     for (i = 0; i < (argc-1); i++)
     {
         if (strcmp(argv[i], "-lambda") == 0)
@@ -225,6 +234,7 @@ static int get_parameters_of_testing(
         return 0;
     }
 
+    is_ok = 0;
     for (i = 0; i < (argc-1); i++)
     {
         if (strcmp(argv[i], "-pr") == 0)
@@ -271,6 +281,7 @@ static int get_parameters_of_estimating(
         return 0;
     }
 
+    is_ok = 0;
     for (i = 0; i < (argc-1); i++)
     {
         if (strcmp(argv[i], "-corr") == 0)
@@ -286,6 +297,7 @@ static int get_parameters_of_estimating(
         return 0;
     }
 
+    is_ok = 0;
     for (i = 0; i < (argc-1); i++)
     {
         if (strcmp(argv[i], "-words") == 0)

@@ -30,8 +30,9 @@
 #include "backtrack_pointers_lib.h"
 #include "bond005_lvcsr_lib.h"
 
+#define MAX_REPEATS_OF_PHONEME 2
 //#define __LVCSR_DEBUG__
-//#define __LVCSR_MEMORY_CONTROL__
+#define __LVCSR_MEMORY_CONTROL__
 
 /* Structure for representation of one cell of the matrix which is used in the
  * Viterbi Beam Search algorithm (see X.Huang, Spoken Language Processing,
@@ -384,10 +385,13 @@ static int calculate_viterbi_matrix(
     printf("\n");
     for (t = 0; t < data.times_number; t++)
     {
-        printf("%d", src_phonemes_sequence[t]);
+        printf("%d ", src_phonemes_sequence[t]);
     }
-    printf("\nTotal times number is %d.\n", data.times_number);
+    printf("\n");
 #endif // __LVCSR_DEBUG__
+#ifdef __LVCSR_MEMORY_CONTROL__
+    printf("\nTotal times number is %d.\n", data.times_number);
+#endif
 
     t = 0; s = 1;
     inp_phoneme_i = src_phonemes_sequence[t];
@@ -767,11 +771,12 @@ static int create_phonemes_sequence_by_transcription(
 
     for (i = start_ind; i <= end_ind; i++)
     {
-        number_of_steps_20ms = (transcription[i].end_time
-                                - transcription[i].start_time) / 10000000;
-        if (number_of_steps_20ms < 1)
+        number_of_steps_20ms = (int)floor((transcription[i].end_time
+                                           - transcription[i].start_time)
+                                          / 100000.0 + 0.5);
+        if (number_of_steps_20ms > MAX_REPEATS_OF_PHONEME)
         {
-            number_of_steps_20ms = 1;
+            number_of_steps_20ms = MAX_REPEATS_OF_PHONEME;
         }
         phonemes_sequence_length += number_of_steps_20ms;
     }
@@ -783,19 +788,23 @@ static int create_phonemes_sequence_by_transcription(
     j = 0;
     for (i = start_ind; i <= end_ind; i++)
     {
-        number_of_steps_20ms = (transcription[i].end_time
-                                - transcription[i].start_time) / 10000000;
-        if (number_of_steps_20ms < 1)
+        number_of_steps_20ms = (int)floor((transcription[i].end_time
+                                           - transcription[i].start_time)
+                                          / 100000.0 + 0.5);
+        if (number_of_steps_20ms > MAX_REPEATS_OF_PHONEME)
         {
-            number_of_steps_20ms = 1;
+            number_of_steps_20ms = MAX_REPEATS_OF_PHONEME;
         }
-        cur_phoneme_weight = log10(transcription[i].probability);
-        for (k = 0; k < number_of_steps_20ms; k++)
+        if (number_of_steps_20ms > 0)
         {
-            phonemes_sequence[j+k] = transcription[i].node_data;
-            phonemes_weights[j+k] = cur_phoneme_weight;
+            cur_phoneme_weight = log10(transcription[i].probability);
+            for (k = 0; k < number_of_steps_20ms; k++)
+            {
+                phonemes_sequence[j+k] = transcription[i].node_data;
+                phonemes_weights[j+k] = cur_phoneme_weight;
+            }
+            j += number_of_steps_20ms;
         }
-        j += number_of_steps_20ms;
     }
 
     return phonemes_sequence_length;
