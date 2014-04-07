@@ -31,8 +31,8 @@
 #include "bond005_lvcsr_lib.h"
 
 //#define __LVCSR_DEBUG__
-//#define __LVCSR_MEMORY_CONTROL__
-#define PRUNING_COEFF 0.8
+#define __LVCSR_MEMORY_CONTROL__
+#define PRUNING_COEFF 0.5
 
 /* Structure for representation of one cell of the matrix which is used in the
  * Viterbi Beam Search algorithm (see X.Huang, Spoken Language Processing,
