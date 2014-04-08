@@ -30,6 +30,7 @@
 #include "backtrack_pointers_lib.h"
 #include "bond005_lvcsr_lib.h"
 
+#define INTERVAL_10MSECS 100000.0
 #define MAX_REPEATS_OF_PHONEME 2
 //#define __LVCSR_DEBUG__
 #define __LVCSR_MEMORY_CONTROL__
@@ -773,7 +774,7 @@ static int create_phonemes_sequence_by_transcription(
     {
         number_of_steps_20ms = (int)floor((transcription[i].end_time
                                            - transcription[i].start_time)
-                                          / 100000.0 + 0.5);
+                                          / INTERVAL_10MSECS + 0.5);
         if (number_of_steps_20ms > MAX_REPEATS_OF_PHONEME)
         {
             number_of_steps_20ms = MAX_REPEATS_OF_PHONEME;
@@ -790,7 +791,7 @@ static int create_phonemes_sequence_by_transcription(
     {
         number_of_steps_20ms = (int)floor((transcription[i].end_time
                                            - transcription[i].start_time)
-                                          / 100000.0 + 0.5);
+                                          / INTERVAL_10MSECS + 0.5);
         if (number_of_steps_20ms > MAX_REPEATS_OF_PHONEME)
         {
             number_of_steps_20ms = MAX_REPEATS_OF_PHONEME;
