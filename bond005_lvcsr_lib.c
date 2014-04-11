@@ -33,7 +33,7 @@
 #define INTERVAL_10MSECS 100000.0
 #define MAX_REPEATS_OF_PHONEME 2
 //#define __LVCSR_DEBUG__
-#define __LVCSR_MEMORY_CONTROL__
+//#define __LVCSR_MEMORY_CONTROL__
 
 /* Structure for representation of one cell of the matrix which is used in the
  * Viterbi Beam Search algorithm (see X.Huang, Spoken Language Processing,
@@ -49,7 +49,12 @@ typedef struct _TViterbiMatrixCell {
 typedef struct _TViterbiMatrix {
     int times_number;           /* times number (i.e. length of recognized
                                    phones sequence) */
-    int words_number;           /* words number (i.e. vocabulary size) */
+    int words_number;           /* number of words in vocabulary, including
+                                   identical words with different variants of
+                                   transcription */
+    int *words_indexes;         /* indexes of words in vocabulary (some words
+                                   may be identical, though they have different
+                                   variants of transcription) */
     int *words_sizes;           /* lengths of words (i.e. numbers of states in
                                    each word) */
     TViterbiMatrixCell ***cells;/* 3-dimension matrix for the Viterbi Beam
@@ -151,9 +156,11 @@ static void create_viterbi_matrix(
     data->times_number = 0;
     data->words_number = words_number;
     data->words_sizes = malloc(sizeof(int) * words_number);
+    data->words_indexes = malloc(sizeof(int) * words_number);
     for (w = 0; w < words_number; w++)
     {
         data->words_sizes[w] = lexicon[w].phonemes_number;
+        data->words_indexes[w] = lexicon[w].word_index;
     }
     data->cells = malloc(2 * sizeof(TViterbiMatrixCell**));
     for (t = 0; t < 2; t++)
@@ -229,7 +236,8 @@ static void delete_viterbi_matrix(TViterbiMatrix* data)
         return;
     }
     if ((data->words_number <= 0) || (data->times_number <= 0)
-            || (data->words_sizes == NULL) || (data->cells == NULL))
+            || (data->words_sizes == NULL) || (data->words_indexes == NULL)
+            || (data->cells == NULL))
     {
         return;
     }
@@ -259,6 +267,8 @@ static void delete_viterbi_matrix(TViterbiMatrix* data)
 
     free(data->words_sizes);
     data->words_sizes = NULL;
+    free(data->words_indexes);
+    data->words_indexes = NULL;
     free(data->cells);
     data->cells = NULL;
     data->words_number = 0;
@@ -400,6 +410,7 @@ static int calculate_viterbi_matrix(
     {
         trg_phoneme_i = words_lexicon[w].phonemes_indexes[s-1];
         i = trg_phoneme_i * phonemes_vocabulary_size + inp_phoneme_i;
+        //i = inp_phoneme_i * phonemes_vocabulary_size + trg_phoneme_i;
         if (confusion_penalties[i] > (-FLT_MAX + FLT_EPSILON))
         {
             data.cells[t][w][s].cost = src_phonemes_weights[t]
@@ -443,6 +454,7 @@ static int calculate_viterbi_matrix(
             {
                 tmp_d = src_phonemes_weights[t_count];
                 i = trg_phoneme_i * phonemes_vocabulary_size + inp_phoneme_i;
+                //i = inp_phoneme_i * phonemes_vocabulary_size + trg_phoneme_i;
                 if (confusion_penalties[i] > (-FLT_MAX + FLT_EPSILON))
                 {
                     tmp_d += confusion_penalties[i];
@@ -469,6 +481,7 @@ static int calculate_viterbi_matrix(
                 trg_phoneme_i = words_lexicon[w].phonemes_indexes[s-1];
                 tmp_d = src_phonemes_weights[t_count];
                 i = trg_phoneme_i * phonemes_vocabulary_size + inp_phoneme_i;
+                //i = inp_phoneme_i * phonemes_vocabulary_size + trg_phoneme_i;
                 if (confusion_penalties[i] > (-FLT_MAX + FLT_EPSILON))
                 {
                     tmp_d += confusion_penalties[i];
@@ -518,6 +531,7 @@ static int calculate_viterbi_matrix(
                 trg_phoneme_i = words_lexicon[w].phonemes_indexes[s-1];
                 tmp_d = src_phonemes_weights[t_count];
                 i = trg_phoneme_i * phonemes_vocabulary_size + inp_phoneme_i;
+                //i = inp_phoneme_i * phonemes_vocabulary_size + trg_phoneme_i;
                 if (confusion_penalties[i] > (-FLT_MAX + FLT_EPSILON))
                 {
                     tmp_val2 += (tmp_d + confusion_penalties[i]);
@@ -554,8 +568,9 @@ static int calculate_viterbi_matrix(
         {
             v_max = 0;
             S = data.words_sizes[v_max];
-            bigram_probability = find_bigram(language_model, lambda, v_max, w,
-                                             &bigram_i);
+            bigram_probability = find_bigram(
+                        language_model, lambda, data.words_indexes[v_max],
+                        data.words_indexes[w], &bigram_i);
             if (bigram_probability > 0.0)
             {
                 tmp_val1 = log10(bigram_probability);
@@ -575,8 +590,9 @@ static int calculate_viterbi_matrix(
             for (v = 1; v < data.words_number; v++)
             {
                 S = data.words_sizes[v];
-                bigram_probability = find_bigram(language_model, lambda, v, w,
-                                                 &bigram_i);
+                bigram_probability = find_bigram(
+                            language_model, lambda, data.words_indexes[v],
+                            data.words_indexes[w], &bigram_i);
                 if (bigram_probability > FLT_EPSILON)
                 {
                     tmp_val2 = log10(bigram_probability);
@@ -715,9 +731,10 @@ static int calculate_words_sequence_by_viterbi_matrix(
     n = data.cells[t][w_max][S].btp->size;
     for (i = 0; i < n; i++)
     {
-        recognized_words_sequence[i] = data.cells[t][w_max][0].btp->words[i];
+        recognized_words_sequence[i] = data.words_indexes[
+                data.cells[t][w_max][0].btp->words[i]];
     }
-    recognized_words_sequence[n] = w_max;
+    recognized_words_sequence[n] = data.words_indexes[w_max];
 
     return (n+1);
 }
@@ -824,6 +841,14 @@ static int compare_bigrams(const void *ptr1, const void *ptr2)
     }
 
     return res;
+}
+
+static int compare_items_of_words_lexicon(const void *ptr1, const void *ptr2)
+{
+    TLinearWordsLexicon *item1 = (TLinearWordsLexicon*)ptr1;
+    TLinearWordsLexicon *item2 = (TLinearWordsLexicon*)ptr2;
+
+    return (item1->word_index - item2->word_index);
 }
 
 int read_string(FILE *read_file, char *str)
@@ -2559,6 +2584,8 @@ int create_linear_words_lexicon(
         free_linear_words_lexicon(linear_words_lexicon, words_lexicon_size);
         words_lexicon_size = 0;
     }
+    qsort(*linear_words_lexicon,words_lexicon_size,sizeof(TLinearWordsLexicon),
+          compare_items_of_words_lexicon);
 
     return words_lexicon_size;
 }
@@ -2790,7 +2817,7 @@ float get_bigram_probability(TLanguageModel language_model, int start_word_ind,
 int recognize_words(
         TMLFFilePart *source_phonemes_MLF, int number_of_MLF_files,
         int phonemes_vocabulary_size, float confusion_penalties_matrix[],
-        int words_vocabulary_size, TLinearWordsLexicon words_lexicon[],
+        TLinearWordsLexicon words_lexicon[], int words_lexicon_size,
         float pruning_coeff, TLanguageModel language_model, float lambda,
         TMLFFilePart **result_words_MLF)
 {
@@ -2807,9 +2834,9 @@ int recognize_words(
     if ((source_phonemes_MLF == NULL) || (number_of_MLF_files <= 0)
             || (phonemes_vocabulary_size <= 0)
             || (confusion_penalties_matrix == NULL)
-            || (words_vocabulary_size <= 0) || (words_lexicon == NULL)
+            || (words_lexicon_size <= 0) || (words_lexicon == NULL)
             || (pruning_coeff < 0.0) || (pruning_coeff > 1.0)
-            || (language_model.unigrams_number != words_vocabulary_size)
+            || (language_model.unigrams_number <= 0)
             || (language_model.unigrams_probabilities == NULL)
             || (language_model.bigrams_number <= 0)
             || (language_model.bigrams == NULL) || (result_words_MLF == NULL)
@@ -2838,7 +2865,7 @@ int recognize_words(
     data.words_sizes = NULL;
     data.times_number = 0;
     data.words_number = 0;
-    create_viterbi_matrix(&data, words_vocabulary_size, words_lexicon);
+    create_viterbi_matrix(&data, words_lexicon_size, words_lexicon);
 
     cur_src = source_phonemes_MLF;
     cur_result = *result_words_MLF;

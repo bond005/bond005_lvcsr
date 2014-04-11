@@ -384,7 +384,7 @@ int recognize_speech_by_mlf_file(int argc, char *argv[])
     TMLFFilePart *src_data = NULL, *res_data = NULL;
     int files_in_MLF = 0;
     char **phonemes_vocabulary, **words_vocabulary;
-    int phonemes_number, words_number;
+    int phonemes_number, words_number, words_lexicon_size;
     TLinearWordsLexicon *words_lexicon = NULL;
     TLanguageModel language_model;
     float lambda = 1.0, pruning_coeff = 0.0;
@@ -428,9 +428,10 @@ int recognize_speech_by_mlf_file(int argc, char *argv[])
                 "incorrect, or it cannot be loaded from the given file).\n");
         return 0;
     }
-    if (!create_linear_words_lexicon(
+    words_lexicon_size = create_linear_words_lexicon(
                 words_vocabulary_name, phonemes_vocabulary, phonemes_number,
-                words_vocabulary, words_number, &words_lexicon))
+                words_vocabulary, words_number, &words_lexicon);
+    if (words_lexicon_size <= 0)
     {
         free_string_array(&phonemes_vocabulary, phonemes_number);
         free_string_array(&words_vocabulary, words_number);
@@ -445,7 +446,7 @@ int recognize_speech_by_mlf_file(int argc, char *argv[])
         free_string_array(&phonemes_vocabulary, phonemes_number);
         free_string_array(&words_vocabulary, words_number);
         free(confusion_penalties_matrix);
-        free_linear_words_lexicon(&words_lexicon, words_number);
+        free_linear_words_lexicon(&words_lexicon, words_lexicon_size);
         fprintf(stderr, "The language model cannot be loaded from the given "\
                 "file.\n");
         return 0;
@@ -467,7 +468,7 @@ int recognize_speech_by_mlf_file(int argc, char *argv[])
     }
     if (!recognize_words(
                 src_data, files_in_MLF, phonemes_number,
-                confusion_penalties_matrix, words_number, words_lexicon,
+                confusion_penalties_matrix, words_lexicon, words_lexicon_size,
                 pruning_coeff, language_model, lambda, &res_data))
     {
         free_string_array(&phonemes_vocabulary, phonemes_number);

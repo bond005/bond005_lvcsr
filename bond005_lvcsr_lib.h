@@ -619,7 +619,7 @@ float get_bigram_probability(TLanguageModel language_model, int start_word_ind,
 /*! \fn int recognize_words(
  *         TMLFFilePart *source_phonemes_MLF, int number_of_MLF_files,
  *         int phonemes_vocabulary_size, float confusion_weights_matrix[],
- *         int words_vocabulary_size, TLinearWordsLexicon words_lexicon[],
+ *         TLinearWordsLexicon words_lexicon[], int words_lexicon_size,
  *         TLanguageModel language_model, float lambda,
  *         TMLFFilePart **result_words_MLF)
  *
@@ -647,11 +647,13 @@ float get_bigram_probability(TLanguageModel language_model, int start_word_ind,
  * describes penalties for mixing up the corresponding phoneme with other
  * phonemes.
  *
- * \param words_vocabulary_size The size of words vocabulary.
- *
  * \param words_lexicon The TLinearWordsLexicon array describing the used words
  * lexicon. Each node of words lexicon defines the word's index and word's
  * phonetic transcription.
+ *
+ * \param words_lexicon_size The size of words lexicon. This size is greater
+ * than or equal to size of words vocabulary, because identical words with
+ * different variants of transcription may be present at the words lexicon.
  *
  * \param pruning_coeff The coefficient of acoustic pruning which is used in
  * the Viterbi beam search algorithm. Value of this coefficient must be more or
@@ -680,7 +682,7 @@ float get_bigram_probability(TLanguageModel language_model, int start_word_ind,
 int recognize_words(
         TMLFFilePart *source_phonemes_MLF, int number_of_MLF_files,
         int phonemes_vocabulary_size, float confusion_penalties_matrix[],
-        int words_vocabulary_size, TLinearWordsLexicon words_lexicon[],
+        TLinearWordsLexicon words_lexicon[], int words_lexicon_size,
         float pruning_coeff, TLanguageModel language_model, float lambda,
         TMLFFilePart **result_words_MLF);
 
