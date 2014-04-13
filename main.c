@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
             res = EXIT_FAILURE;
         }
     }
-    else if (mode == emTESTING)
+    else if (mode == emRECOGNITION)
     {
         if(!recognize_speech_by_mlf_file(argc, argv))
         {

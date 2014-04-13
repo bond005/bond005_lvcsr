@@ -1,3 +1,4 @@
+#include <omp.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -10,9 +11,9 @@ int get_execution_mode(int argc, char *argv[])
     int res = emUNKNOWN;
     for (i = 0; i < argc; i++)
     {
-        if (strcmp(argv[i], "-test") == 0)
+        if (strcmp(argv[i], "-recogn") == 0)
         {
-            res = emTESTING;
+            res = emRECOGNITION;
             break;
         }
         if (strcmp(argv[i], "-train") == 0)
@@ -108,7 +109,7 @@ static int get_parameters_of_training(
     return ((n * 2) == (argc-2));
 }
 
-static int get_parameters_of_testing(
+static int get_parameters_of_recognition(
         int argc,char *argv[], char **source_file_name,char **result_file_name,
         char **phonemes_vocabulary, char **confusion_matrix_name,
         char **words_vocabulary, float *pruning_coeff,
@@ -389,8 +390,10 @@ int recognize_speech_by_mlf_file(int argc, char *argv[])
     TLanguageModel language_model;
     float lambda = 1.0, pruning_coeff = 0.0;
     float *confusion_penalties_matrix = NULL;
+    int recogn_res;
+    double start_time, end_time;
 
-    if (!get_parameters_of_testing(
+    if (!get_parameters_of_recognition(
                 argc, argv, &source_file_name, &result_file_name,
                 &phonemes_vocabulary_name, &confusion_matrix_name,
                 &words_vocabulary_name, &pruning_coeff, &language_model_name,
@@ -466,10 +469,14 @@ int recognize_speech_by_mlf_file(int argc, char *argv[])
                 "file) cannot be loaded from the given file.\n");
         return 0;
     }
-    if (!recognize_words(
+
+    start_time = omp_get_wtime();
+    recogn_res = recognize_words(
                 src_data, files_in_MLF, phonemes_number,
                 confusion_penalties_matrix, words_lexicon, words_lexicon_size,
-                pruning_coeff, language_model, lambda, &res_data))
+                pruning_coeff, language_model, lambda, &res_data);
+    end_time = omp_get_wtime();
+    if (!recogn_res)
     {
         free_string_array(&phonemes_vocabulary, phonemes_number);
         free_string_array(&words_vocabulary, words_number);
@@ -504,6 +511,10 @@ int recognize_speech_by_mlf_file(int argc, char *argv[])
     free_language_model(&language_model);
     free_MLF(&src_data, files_in_MLF);
     free_MLF(&res_data, files_in_MLF);
+
+    printf("Duration of recognition process is %.3f secs.\n",
+           end_time - start_time);
+
     return 1;
 }
 

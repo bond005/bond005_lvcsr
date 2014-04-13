@@ -2,7 +2,6 @@
 #include <CUnit/CUnit.h>
 
 #include "add_word_to_words_tree_test.h"
-#include "backtrack_pointers_test.h"
 #include "calculate_confusion_penalties_matrix_test.h"
 #include "calculate_language_model_test.h"
 #include "create_linear_words_lexicon_test.h"
@@ -108,10 +107,6 @@ int main()
         return CU_get_error();
     }
     if (!prepare_for_testing_of_calculate_confusion_penalties_matrix())
-    {
-        return CU_get_error();
-    }
-    if (!prepare_for_testing_of_backtrack_pointers())
     {
         return CU_get_error();
     }

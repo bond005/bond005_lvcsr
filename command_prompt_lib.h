@@ -1,7 +1,7 @@
 #ifndef COMMAND_PROMPT_LIB_H
 #define COMMAND_PROMPT_LIB_H
 
-enum TExecutionMode { emUNKNOWN, emTRAINING, emTESTING, emESTIMATION };
+enum TExecutionMode { emUNKNOWN, emTRAINING, emRECOGNITION, emESTIMATION };
 
 int get_execution_mode(int argc, char *argv[]);
 int train_language_model_by_mlf_file(int argc, char *argv[]);

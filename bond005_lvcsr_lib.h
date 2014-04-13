@@ -131,12 +131,14 @@ typedef struct {
 } TMLFFilePart;
 
 /*! \struct TWordBigram
- * \brief Structure for representation of one words bigram.
+ * \brief Structure for representation of several words bigrams, which are
+ * ended in the given word.
  */
 typedef struct _TWordBigram {
-    int first_word;   /**< Index of first word in bigram. */
-    int second_word;  /**< Index of second word in bigram. */
-    float probability;/**< Probability of bigram. */
+    int number_of_first_words; /**< Number of first words in bigrams. */
+    int *first_words;          /**< Indexes of first words in bigrams. */
+    float *probabilities;      /**< Probabilities of bigrams, which are
+                                    begun in corresponding first words. */
 } TWordBigram;
 
 /*! \struct TLanguageModel
@@ -145,8 +147,11 @@ typedef struct _TWordBigram {
 typedef struct _TLanguageModel {
     int unigrams_number;          /**< Number of unigrams. */
     float *unigrams_probabilities;/**< Probabilities of unigrams. */
-    int bigrams_number;           /**< Number of existable bigrams. */
-    TWordBigram *bigrams;         /**< Array of existable bigrams. */
+    TWordBigram *bigrams;         /**< Array of existable bigrams (length of
+                                       this array always equals to number of
+                                       unigrams, and each item of this array
+                                       can describe several bigrams, which are
+                                       ended in the corresponding word). */
 } TLanguageModel;
 
 /*! \fn int load_phonemes_MLF(
