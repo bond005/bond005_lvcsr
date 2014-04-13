@@ -3004,7 +3004,7 @@ float estimate_error_rate(
         TMLFFilePart recognized_MLF[], TMLFFilePart correct_MLF[],
         int files_number, int *insertions, int *deletions, int *substitutions)
 {
-    int i, j, k, compare_res, n = 0, m = 0, is_ok = 1;
+    int i, j, k, n = 0, m = 0, is_ok = 1;
     int number_of_insertions = 0;
     int number_of_deletions = 0;
     int number_of_substitutions = 0;
@@ -3038,86 +3038,77 @@ float estimate_error_rate(
                 is_ok = 0;
                 break;
             }
-            n = recognized_MLF[k].transcription_size;
-            m = correct_MLF[k].transcription_size;
-            R = malloc(n * sizeof(int*));
-            B = malloc(n * sizeof(int*));
-            memset(R, 0, n * sizeof(int*));
-            memset(B, 0, n * sizeof(int*));
-            for (i = 0; i < n; i++)
+            n = correct_MLF[k].transcription_size;
+            m = recognized_MLF[k].transcription_size;
+            R = malloc((n+1) * sizeof(int*));
+            B = malloc((n+1) * sizeof(int*));
+            memset(R, 0, (n+1) * sizeof(int*));
+            memset(B, 0, (n+1) * sizeof(int*));
+            for (i = 0; i <= n; i++)
             {
-                R[i] = malloc(m * sizeof(int));
-                B[i] = malloc(m * sizeof(int));
+                R[i] = malloc((m+1) * sizeof(int));
+                B[i] = malloc((m+1) * sizeof(int));
             }
 
-            if (recognized_MLF[k].transcription[0].node_data
-                    == correct_MLF[k].transcription[0].node_data)
-            {
-                compare_res = 0;
-            }
-            else
-            {
-                compare_res = 1;
-            }
-            R[0][0] = compare_res;
-            B[0][0] = ((compare_res == 0) ? 3 : 4);
+            R[0][0] = 0;
+            B[0][0] = 0;
 
             j = 0;
-            for (i = 1; i < n; i++)
+            for (i = 1; i <= n; i++)
             {
                 R[i][j] = i;
-                B[i][j] = 2;
-            }
-            i = 0;
-            for (j = 1; j < m; j++)
-            {
-                R[i][j] = j;
                 B[i][j] = 1;
             }
-            for (i = 1; i < n; i++)
+            i = 0;
+            for (j = 1; j <= m; j++)
             {
-                for (j = 1; j < m; j++)
+                R[i][j] = j;
+                B[i][j] = 2;
+            }
+            for (i = 1; i <= n; i++)
+            {
+                for (j = 1; j <= m; j++)
                 {
-                    if (recognized_MLF[k].transcription[i].node_data
-                            == correct_MLF[k].transcription[j].node_data)
+                    if (correct_MLF[k].transcription[i-1].node_data
+                            == recognized_MLF[k].transcription[j-1].node_data)
                     {
-                        compare_res = 0;
+                        R[i][j] = R[i-1][j-1];
+                        B[i][j] = 3;
                     }
                     else
                     {
-                        compare_res = 1;
-                    }
-                    if ((R[i-1][j] + 1) < (R[i-1][j-1] + compare_res))
-                    {
-                        if ((R[i-1][j] + 1) < (R[i][j-1] + 1))
+                        if ((R[i-1][j] + 1) < (R[i-1][j-1] + 1))
                         {
-                            R[i][j] = R[i][j] + 1;
-                            B[i][j] = 2;
+                            if ((R[i-1][j] + 1) < (R[i][j-1] + 1))
+                            {
+                                R[i][j] = R[i-1][j] + 1;
+                                B[i][j] = 1;
+                            }
+                            else
+                            {
+                                R[i][j] = R[i][j-1] + 1;
+                                B[i][j] = 2;
+                            }
                         }
                         else
                         {
-                            R[i][j] = R[i][j-1] + 1;
-                            B[i][j] = 1;
-                        }
-                    }
-                    else
-                    {
-                        if ((R[i-1][j-1] + compare_res) < (R[i][j-1] + 1))
-                        {
-                            R[i][j] = R[i][j-1] + compare_res;
-                            B[i][j] = ((compare_res == 0) ? 3 : 4);
-                        }
-                        else
-                        {
-                            R[i][j] = R[i][j-1] + 1;
-                            B[i][j] = 1;
+                            if ((R[i-1][j-1] + 1) < (R[i][j-1] + 1))
+                            {
+                                R[i][j] = R[i-1][j-1] + 1;
+                                B[i][j] = 4;
+                            }
+                            else
+                            {
+                                R[i][j] = R[i][j-1] + 1;
+                                B[i][j] = 2;
+                            }
                         }
                     }
                 }
             }
-            i = n-1;
-            j = m-1;
-            while ((i >= 0) && (j >= 0))
+            i = n;
+            j = m;
+            while ((i > 0) && (j > 0))
             {
                 switch (B[i][j])
                 {
@@ -3137,7 +3128,7 @@ float estimate_error_rate(
                     i--; j--;
                 }
             }
-            for (i = 0; i < n; i++)
+            for (i = 0; i <= n; i++)
             {
                 free(R[i]);
                 free(B[i]);
