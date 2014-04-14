@@ -14,5 +14,4 @@ HEADERS += \
 win32:QMAKE_CFLAGS_RELEASE += /fp:fast /Ox /arch:SSE2 /openmp
 unix:QMAKE_CFLAGS_RELEASE += -O3 -march=native -mfpmath=sse -msse2 -funroll-loops -ffast-math -fopenmp
 unix:QMAKE_CFLAGS_DEBUG += -fopenmp
-unix:QMAKE_LFLAGS += -fopenmp
 unix:QMAKE_LIBS += -lgomp -lpthread

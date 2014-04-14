@@ -14,32 +14,35 @@ static void create_language_model_for_testing()
 {
     language_model.unigrams_number = 4;
     language_model.unigrams_probabilities = malloc(4 * sizeof(float));
-    language_model.bigrams_number = 6;
-    language_model.bigrams = malloc(6 * sizeof(TWordBigram));
+    language_model.bigrams = malloc(4 * sizeof(TWordBigram));
 
-    language_model.bigrams[0].first_word = 1;
-    language_model.bigrams[0].second_word = 0;
-    language_model.bigrams[0].probability = 0.13;
+    language_model.bigrams[0].number_of_first_words = 2;
+    language_model.bigrams[0].first_words = malloc(2 * sizeof(int));
+    language_model.bigrams[0].probabilities = malloc(2 * sizeof(float));
+    language_model.bigrams[0].first_words[0] = 1;
+    language_model.bigrams[0].probabilities[0] = 0.13;
+    language_model.bigrams[0].first_words[1] = 3;
+    language_model.bigrams[0].probabilities[1] = 0.2;
 
-    language_model.bigrams[1].first_word = 3;
-    language_model.bigrams[1].second_word = 0;
-    language_model.bigrams[1].probability = 0.2;
+    language_model.bigrams[1].number_of_first_words = 0;
+    language_model.bigrams[1].first_words = NULL;
+    language_model.bigrams[1].probabilities = NULL;
 
-    language_model.bigrams[2].first_word = 0;
-    language_model.bigrams[2].second_word = 2;
-    language_model.bigrams[2].probability = 0.23;
+    language_model.bigrams[2].number_of_first_words = 2;
+    language_model.bigrams[2].first_words = malloc(2 * sizeof(int));
+    language_model.bigrams[2].probabilities = malloc(2 * sizeof(float));
+    language_model.bigrams[2].first_words[0] = 0;
+    language_model.bigrams[2].probabilities[0] = 0.23;
+    language_model.bigrams[2].first_words[1] = 3;
+    language_model.bigrams[2].probabilities[1] = 0.25;
 
-    language_model.bigrams[3].first_word = 3;
-    language_model.bigrams[3].second_word = 2;
-    language_model.bigrams[3].probability = 0.25;
-
-    language_model.bigrams[4].first_word = 0;
-    language_model.bigrams[4].second_word = 3;
-    language_model.bigrams[4].probability = 0.11;
-
-    language_model.bigrams[5].first_word = 2;
-    language_model.bigrams[5].second_word = 3;
-    language_model.bigrams[5].probability = 0.08;
+    language_model.bigrams[3].number_of_first_words = 2;
+    language_model.bigrams[3].first_words = malloc(2 * sizeof(int));
+    language_model.bigrams[3].probabilities = malloc(2 * sizeof(float));
+    language_model.bigrams[3].first_words[0] = 0;
+    language_model.bigrams[3].probabilities[0] = 0.11;
+    language_model.bigrams[3].first_words[1] = 2;
+    language_model.bigrams[3].probabilities[1] = 0.08;
 
     language_model.unigrams_probabilities[0] = 0.2;
     language_model.unigrams_probabilities[1] = 0.3;
@@ -98,9 +101,9 @@ void get_bigram_probability_valid_test_1()
     float probability, target_probability;
     int first_word, second_word;
 
-    target_probability = language_model.bigrams[2].probability;
-    first_word = language_model.bigrams[2].first_word;
-    second_word = language_model.bigrams[2].second_word;
+    target_probability = language_model.bigrams[2].probabilities[1];
+    first_word = language_model.bigrams[2].first_words[1];
+    second_word = 2;
     probability = get_bigram_probability(language_model,
                                          first_word, second_word);
     CU_ASSERT_DOUBLE_EQUAL_FATAL(target_probability, probability, FLT_EPSILON);
@@ -111,9 +114,9 @@ void get_bigram_probability_valid_test_2()
     float probability, target_probability;
     int first_word, second_word;
 
-    target_probability = language_model.bigrams[0].probability;
-    first_word = language_model.bigrams[0].first_word;
-    second_word = language_model.bigrams[0].second_word;
+    target_probability = language_model.bigrams[0].probabilities[0];
+    first_word = language_model.bigrams[0].first_words[0];
+    second_word = 0;
     probability = get_bigram_probability(language_model,
                                          first_word, second_word);
     CU_ASSERT_DOUBLE_EQUAL_FATAL(target_probability, probability, FLT_EPSILON);
@@ -125,11 +128,11 @@ void get_bigram_probability_valid_test_3()
     int first_word, second_word;
     int n;
 
-    n = language_model.bigrams_number;
+    n = language_model.unigrams_number;
 
-    target_probability = language_model.bigrams[n-1].probability;
-    first_word = language_model.bigrams[n-1].first_word;
-    second_word = language_model.bigrams[n-1].second_word;
+    target_probability = language_model.bigrams[n-1].probabilities[0];
+    first_word = language_model.bigrams[n-1].first_words[0];
+    second_word = n-1;
     probability = get_bigram_probability(language_model,
                                          first_word, second_word);
     CU_ASSERT_DOUBLE_EQUAL_FATAL(target_probability, probability, FLT_EPSILON);
@@ -150,12 +153,6 @@ void get_bigram_probability_invalid_test_1()
 
     incorrect_model = language_model;
     incorrect_model.bigrams = NULL;
-    probability = get_bigram_probability(
-                incorrect_model, incorrect_first_word, incorrect_second_word);
-    CU_ASSERT_DOUBLE_EQUAL_FATAL(0.0, probability, FLT_EPSILON);
-
-    incorrect_model = language_model;
-    incorrect_model.bigrams_number = 0;
     probability = get_bigram_probability(
                 incorrect_model, incorrect_first_word, incorrect_second_word);
     CU_ASSERT_DOUBLE_EQUAL_FATAL(0.0, probability, FLT_EPSILON);

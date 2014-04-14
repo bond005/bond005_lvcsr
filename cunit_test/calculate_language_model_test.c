@@ -111,6 +111,8 @@ static void free_words_MLF_data()
 
 static void create_target_language_model1()
 {
+    int i;
+
     target_language_model1.unigrams_number = WORDS_NUMBER;
     target_language_model1.unigrams_probabilities
             = malloc(WORDS_NUMBER * sizeof(float));
@@ -125,106 +127,127 @@ static void create_target_language_model1()
     target_language_model1.unigrams_probabilities[8] = 2.0/(12.0+10.0+15.0);
     target_language_model1.unigrams_probabilities[9] = 5.0/(12.0+10.0+15.0);
 
-    target_language_model1.bigrams_number = 23;
-    target_language_model1.bigrams
-            = malloc(target_language_model1.bigrams_number*sizeof(TWordBigram));
+    target_language_model1.bigrams = malloc(WORDS_NUMBER * sizeof(TWordBigram));
+    for (i = 0; i < WORDS_NUMBER; i++)
+    {
+        target_language_model1.bigrams[i].number_of_first_words = 0;
+        target_language_model1.bigrams[i].first_words = NULL;
+        target_language_model1.bigrams[i].probabilities = NULL;
+    }
 
-    target_language_model1.bigrams[0].first_word = 5;
-    target_language_model1.bigrams[0].second_word = 0;
-    target_language_model1.bigrams[0].probability = 2.0 / 5.0;
+    target_language_model1.bigrams[0].number_of_first_words = 2;
+    target_language_model1.bigrams[0].first_words = malloc(2*sizeof(int));
+    target_language_model1.bigrams[0].probabilities = malloc(2*sizeof(float));
 
-    target_language_model1.bigrams[1].first_word = 9;
-    target_language_model1.bigrams[1].second_word = 0;
-    target_language_model1.bigrams[1].probability = 1.0 / 5.0;
+    target_language_model1.bigrams[0].first_words[0] = 5;
+    target_language_model1.bigrams[0].probabilities[0] = 2.0 / 5.0;
 
-    target_language_model1.bigrams[2].first_word = 0;
-    target_language_model1.bigrams[2].second_word = 1;
-    target_language_model1.bigrams[2].probability = 2.0 / 3.0;
+    target_language_model1.bigrams[0].first_words[1] = 9;
+    target_language_model1.bigrams[0].probabilities[1] = 1.0 / 5.0;
 
-    target_language_model1.bigrams[3].first_word = 8;
-    target_language_model1.bigrams[3].second_word = 1;
-    target_language_model1.bigrams[3].probability = 1.0 / 2.0;
+    target_language_model1.bigrams[1].number_of_first_words = 3;
+    target_language_model1.bigrams[1].first_words = malloc(3*sizeof(int));
+    target_language_model1.bigrams[1].probabilities = malloc(3*sizeof(float));
 
-    target_language_model1.bigrams[4].first_word = 9;
-    target_language_model1.bigrams[4].second_word = 1;
-    target_language_model1.bigrams[4].probability = 1.0 / 5.0;
+    target_language_model1.bigrams[1].first_words[0] = 5;
+    target_language_model1.bigrams[1].probabilities[0] = 2.0 / 3.0;
 
-    target_language_model1.bigrams[5].first_word = 1;
-    target_language_model1.bigrams[5].second_word = 2;
-    target_language_model1.bigrams[5].probability = 2.0 / 4.0;
+    target_language_model1.bigrams[1].first_words[1] = 8;
+    target_language_model1.bigrams[1].probabilities[1] = 1.0 / 2.0;
 
-    target_language_model1.bigrams[6].first_word = 4;
-    target_language_model1.bigrams[6].second_word = 2;
-    target_language_model1.bigrams[6].probability = 2.0 / 3.0;
+    target_language_model1.bigrams[1].first_words[2] = 9;
+    target_language_model1.bigrams[1].probabilities[2] = 1.0 / 5.0;
 
-    target_language_model1.bigrams[7].first_word = 9;
-    target_language_model1.bigrams[7].second_word = 2;
-    target_language_model1.bigrams[7].probability = 1.0 / 5.0;
+    target_language_model1.bigrams[2].number_of_first_words = 3;
+    target_language_model1.bigrams[2].first_words = malloc(3*sizeof(int));
+    target_language_model1.bigrams[2].probabilities = malloc(3*sizeof(float));
 
-    target_language_model1.bigrams[8].first_word = 2;
-    target_language_model1.bigrams[8].second_word = 3;
-    target_language_model1.bigrams[8].probability = 1.0 / 5.0;
+    target_language_model1.bigrams[2].first_words[0] = 1;
+    target_language_model1.bigrams[2].probabilities[0] = 2.0 / 4.0;
 
-    target_language_model1.bigrams[9].first_word = 6;
-    target_language_model1.bigrams[9].second_word = 3;
-    target_language_model1.bigrams[9].probability = 1.0 / 5.0;
+    target_language_model1.bigrams[2].first_words[1] = 4;
+    target_language_model1.bigrams[2].probabilities[1] = 2.0 / 3.0;
 
-    target_language_model1.bigrams[10].first_word = 6;
-    target_language_model1.bigrams[10].second_word = 4;
-    target_language_model1.bigrams[10].probability = 3.0 / 5.0;
+    target_language_model1.bigrams[2].first_words[2] = 9;
+    target_language_model1.bigrams[2].probabilities[2] = 1.0 / 5.0;
 
-    target_language_model1.bigrams[11].first_word = 2;
-    target_language_model1.bigrams[11].second_word = 5;
-    target_language_model1.bigrams[11].probability = 2.0 / 5.0;
+    target_language_model1.bigrams[3].number_of_first_words = 2;
+    target_language_model1.bigrams[3].first_words = malloc(2*sizeof(int));
+    target_language_model1.bigrams[3].probabilities = malloc(2*sizeof(float));
 
-    target_language_model1.bigrams[12].first_word = 7;
-    target_language_model1.bigrams[12].second_word = 5;
-    target_language_model1.bigrams[12].probability = 1.0 / 2.0;
+    target_language_model1.bigrams[3].first_words[0] = 2;
+    target_language_model1.bigrams[3].probabilities[0] = 1.0 / 5.0;
 
-    target_language_model1.bigrams[13].first_word = 1;
-    target_language_model1.bigrams[13].second_word = 6;
-    target_language_model1.bigrams[13].probability = 2.0 / 4.0;
+    target_language_model1.bigrams[3].first_words[1] = 6;
+    target_language_model1.bigrams[3].probabilities[1] = 1.0 / 5.0;
 
-    target_language_model1.bigrams[14].first_word = 2;
-    target_language_model1.bigrams[14].second_word = 6;
-    target_language_model1.bigrams[14].probability = 1.0 / 5.0;
+    target_language_model1.bigrams[4].number_of_first_words = 1;
+    target_language_model1.bigrams[4].first_words = malloc(1*sizeof(int));
+    target_language_model1.bigrams[4].probabilities = malloc(1*sizeof(float));
 
-    target_language_model1.bigrams[15].first_word = 7;
-    target_language_model1.bigrams[15].second_word = 6;
-    target_language_model1.bigrams[15].probability = 1.0 / 2.0;
+    target_language_model1.bigrams[4].first_words[0] = 6;
+    target_language_model1.bigrams[4].probabilities[0] = 3.0 / 5.0;
 
-    target_language_model1.bigrams[16].first_word = 9;
-    target_language_model1.bigrams[16].second_word = 6;
-    target_language_model1.bigrams[16].probability = 1.0 / 5.0;
+    target_language_model1.bigrams[5].number_of_first_words = 2;
+    target_language_model1.bigrams[5].first_words = malloc(2*sizeof(int));
+    target_language_model1.bigrams[5].probabilities = malloc(2*sizeof(float));
 
-    target_language_model1.bigrams[17].first_word = 5;
-    target_language_model1.bigrams[17].second_word = 7;
-    target_language_model1.bigrams[17].probability = 2.0 / 5.0;
+    target_language_model1.bigrams[5].first_words[0] = 2;
+    target_language_model1.bigrams[5].probabilities[0] = 2.0 / 5.0;
 
-    target_language_model1.bigrams[18].first_word = 5;
-    target_language_model1.bigrams[18].second_word = 8;
-    target_language_model1.bigrams[18].probability = 1.0 / 5.0;
+    target_language_model1.bigrams[5].first_words[1] = 7;
+    target_language_model1.bigrams[5].probabilities[1] = 1.0 / 2.0;
 
-    target_language_model1.bigrams[19].first_word = 9;
-    target_language_model1.bigrams[19].second_word = 8;
-    target_language_model1.bigrams[19].probability = 1.0 / 5.0;
+    target_language_model1.bigrams[6].number_of_first_words = 4;
+    target_language_model1.bigrams[6].first_words = malloc(4*sizeof(int));
+    target_language_model1.bigrams[6].probabilities = malloc(4*sizeof(float));
 
-    target_language_model1.bigrams[20].first_word = 0;
-    target_language_model1.bigrams[20].second_word = 9;
-    target_language_model1.bigrams[20].probability = 1.0 / 3.0;
+    target_language_model1.bigrams[6].first_words[0] = 1;
+    target_language_model1.bigrams[6].probabilities[0] = 2.0 / 4.0;
 
-    target_language_model1.bigrams[21].first_word = 3;
-    target_language_model1.bigrams[21].second_word = 9;
-    target_language_model1.bigrams[21].probability = 3.0 / 3.0;
+    target_language_model1.bigrams[6].first_words[1] = 2;
+    target_language_model1.bigrams[6].probabilities[1] = 1.0 / 5.0;
 
-    target_language_model1.bigrams[22].first_word = 8;
-    target_language_model1.bigrams[22].second_word = 9;
-    target_language_model1.bigrams[22].probability = 1.0 / 2.0;
+    target_language_model1.bigrams[6].first_words[2] = 7;
+    target_language_model1.bigrams[6].probabilities[2] = 1.0 / 2.0;
+
+    target_language_model1.bigrams[6].first_words[3] = 9;
+    target_language_model1.bigrams[6].probabilities[3] = 1.0 / 5.0;
+
+    target_language_model1.bigrams[7].number_of_first_words = 1;
+    target_language_model1.bigrams[7].first_words = malloc(1*sizeof(int));
+    target_language_model1.bigrams[7].probabilities = malloc(1*sizeof(float));
+
+    target_language_model1.bigrams[7].first_words[0] = 5;
+    target_language_model1.bigrams[7].probabilities[0] = 2.0 / 5.0;
+
+    target_language_model1.bigrams[8].number_of_first_words = 2;
+    target_language_model1.bigrams[8].first_words = malloc(2*sizeof(int));
+    target_language_model1.bigrams[8].probabilities = malloc(2*sizeof(float));
+
+    target_language_model1.bigrams[8].first_words[0] = 5;
+    target_language_model1.bigrams[8].probabilities[0] = 1.0 / 5.0;
+
+    target_language_model1.bigrams[8].first_words[1] = 9;
+    target_language_model1.bigrams[8].probabilities[1] = 1.0 / 5.0;
+
+    target_language_model1.bigrams[9].number_of_first_words = 3;
+    target_language_model1.bigrams[9].first_words = malloc(3*sizeof(int));
+    target_language_model1.bigrams[9].probabilities = malloc(3*sizeof(float));
+
+    target_language_model1.bigrams[9].first_words[0] = 0;
+    target_language_model1.bigrams[9].probabilities[0] = 1.0 / 3.0;
+
+    target_language_model1.bigrams[9].first_words[1] = 3;
+    target_language_model1.bigrams[9].probabilities[1] = 3.0 / 3.0;
+
+    target_language_model1.bigrams[9].first_words[2] = 8;
+    target_language_model1.bigrams[9].probabilities[2] = 1.0 / 2.0;
 }
 
 static void create_target_language_model2()
 {
-    int i, n;
+    int i, j, n;
 
     target_language_model2.unigrams_number = WORDS_NUMBER;
     target_language_model2.unigrams_probabilities
@@ -240,119 +263,143 @@ static void create_target_language_model2()
     target_language_model2.unigrams_probabilities[8] = 2.0/(12.0+10.0+15.0);
     target_language_model2.unigrams_probabilities[9] = 5.0/(12.0+10.0+15.0);
 
-    target_language_model2.bigrams_number = 23;
-    target_language_model2.bigrams
-            = malloc(target_language_model2.bigrams_number*sizeof(TWordBigram));
-
-    target_language_model2.bigrams[0].first_word = 5;
-    target_language_model2.bigrams[0].second_word = 0;
-    target_language_model2.bigrams[0].probability = 2.0 / 5.0;
-
-    target_language_model2.bigrams[1].first_word = 9;
-    target_language_model2.bigrams[1].second_word = 0;
-    target_language_model2.bigrams[1].probability = 1.0 / 5.0;
-
-    target_language_model2.bigrams[2].first_word = 0;
-    target_language_model2.bigrams[2].second_word = 1;
-    target_language_model2.bigrams[2].probability = 2.0 / 3.0;
-
-    target_language_model2.bigrams[3].first_word = 8;
-    target_language_model2.bigrams[3].second_word = 1;
-    target_language_model2.bigrams[3].probability = 1.0 / 2.0;
-
-    target_language_model2.bigrams[4].first_word = 9;
-    target_language_model2.bigrams[4].second_word = 1;
-    target_language_model2.bigrams[4].probability = 1.0 / 5.0;
-
-    target_language_model2.bigrams[5].first_word = 1;
-    target_language_model2.bigrams[5].second_word = 2;
-    target_language_model2.bigrams[5].probability = 2.0 / 4.0;
-
-    target_language_model2.bigrams[6].first_word = 4;
-    target_language_model2.bigrams[6].second_word = 2;
-    target_language_model2.bigrams[6].probability = 2.0 / 3.0;
-
-    target_language_model2.bigrams[7].first_word = 9;
-    target_language_model2.bigrams[7].second_word = 2;
-    target_language_model2.bigrams[7].probability = 1.0 / 5.0;
-
-    target_language_model2.bigrams[8].first_word = 2;
-    target_language_model2.bigrams[8].second_word = 3;
-    target_language_model2.bigrams[8].probability = 1.0 / 5.0;
-
-    target_language_model2.bigrams[9].first_word = 6;
-    target_language_model2.bigrams[9].second_word = 3;
-    target_language_model2.bigrams[9].probability = 1.0 / 5.0;
-
-    target_language_model2.bigrams[10].first_word = 6;
-    target_language_model2.bigrams[10].second_word = 4;
-    target_language_model2.bigrams[10].probability = 3.0 / 5.0;
-
-    target_language_model2.bigrams[11].first_word = 2;
-    target_language_model2.bigrams[11].second_word = 5;
-    target_language_model2.bigrams[11].probability = 2.0 / 5.0;
-
-    target_language_model2.bigrams[12].first_word = 7;
-    target_language_model2.bigrams[12].second_word = 5;
-    target_language_model2.bigrams[12].probability = 1.0 / 2.0;
-
-    target_language_model2.bigrams[13].first_word = 1;
-    target_language_model2.bigrams[13].second_word = 6;
-    target_language_model2.bigrams[13].probability = 2.0 / 4.0;
-
-    target_language_model2.bigrams[14].first_word = 2;
-    target_language_model2.bigrams[14].second_word = 6;
-    target_language_model2.bigrams[14].probability = 1.0 / 5.0;
-
-    target_language_model2.bigrams[15].first_word = 7;
-    target_language_model2.bigrams[15].second_word = 6;
-    target_language_model2.bigrams[15].probability = 1.0 / 2.0;
-
-    target_language_model2.bigrams[16].first_word = 9;
-    target_language_model2.bigrams[16].second_word = 6;
-    target_language_model2.bigrams[16].probability = 1.0 / 5.0;
-
-    target_language_model2.bigrams[17].first_word = 5;
-    target_language_model2.bigrams[17].second_word = 7;
-    target_language_model2.bigrams[17].probability = 2.0 / 5.0;
-
-    target_language_model2.bigrams[18].first_word = 5;
-    target_language_model2.bigrams[18].second_word = 8;
-    target_language_model2.bigrams[18].probability = 1.0 / 5.0;
-
-    target_language_model2.bigrams[19].first_word = 9;
-    target_language_model2.bigrams[19].second_word = 8;
-    target_language_model2.bigrams[19].probability = 1.0 / 5.0;
-
-    target_language_model2.bigrams[20].first_word = 0;
-    target_language_model2.bigrams[20].second_word = 9;
-    target_language_model2.bigrams[20].probability = 1.0 / 3.0;
-
-    target_language_model2.bigrams[21].first_word = 3;
-    target_language_model2.bigrams[21].second_word = 9;
-    target_language_model2.bigrams[21].probability = 3.0 / 3.0;
-
-    target_language_model2.bigrams[22].first_word = 8;
-    target_language_model2.bigrams[22].second_word = 9;
-    target_language_model2.bigrams[22].probability = 1.0 / 2.0;
-
-    i = 0;
-    while (i < target_language_model2.bigrams_number)
+    target_language_model2.bigrams = malloc(WORDS_NUMBER * sizeof(TWordBigram));
+    for (i = 0; i < WORDS_NUMBER; i++)
     {
-        if (target_language_model2.bigrams[i].probability > eps2)
+        target_language_model2.bigrams[i].number_of_first_words = 0;
+        target_language_model2.bigrams[i].first_words = NULL;
+        target_language_model2.bigrams[i].probabilities = NULL;
+    }
+
+    target_language_model2.bigrams[0].number_of_first_words = 2;
+    target_language_model2.bigrams[0].first_words = malloc(2*sizeof(int));
+    target_language_model2.bigrams[0].probabilities = malloc(2*sizeof(float));
+
+    target_language_model2.bigrams[0].first_words[0] = 5;
+    target_language_model2.bigrams[0].probabilities[0] = 2.0 / 5.0;
+
+    target_language_model2.bigrams[0].first_words[1] = 9;
+    target_language_model2.bigrams[0].probabilities[1] = 1.0 / 5.0;
+
+    target_language_model2.bigrams[1].number_of_first_words = 3;
+    target_language_model2.bigrams[1].first_words = malloc(3*sizeof(int));
+    target_language_model2.bigrams[1].probabilities = malloc(3*sizeof(float));
+
+    target_language_model2.bigrams[1].first_words[0] = 5;
+    target_language_model2.bigrams[1].probabilities[0] = 2.0 / 3.0;
+
+    target_language_model2.bigrams[1].first_words[1] = 8;
+    target_language_model2.bigrams[1].probabilities[1] = 1.0 / 2.0;
+
+    target_language_model2.bigrams[1].first_words[2] = 9;
+    target_language_model2.bigrams[1].probabilities[2] = 1.0 / 5.0;
+
+    target_language_model2.bigrams[2].number_of_first_words = 3;
+    target_language_model2.bigrams[2].first_words = malloc(3*sizeof(int));
+    target_language_model2.bigrams[2].probabilities = malloc(3*sizeof(float));
+
+    target_language_model2.bigrams[2].first_words[0] = 1;
+    target_language_model2.bigrams[2].probabilities[0] = 2.0 / 4.0;
+
+    target_language_model2.bigrams[2].first_words[1] = 4;
+    target_language_model2.bigrams[2].probabilities[1] = 2.0 / 3.0;
+
+    target_language_model2.bigrams[2].first_words[2] = 9;
+    target_language_model2.bigrams[2].probabilities[2] = 1.0 / 5.0;
+
+    target_language_model2.bigrams[3].number_of_first_words = 2;
+    target_language_model2.bigrams[3].first_words = malloc(2*sizeof(int));
+    target_language_model2.bigrams[3].probabilities = malloc(2*sizeof(float));
+
+    target_language_model2.bigrams[3].first_words[0] = 2;
+    target_language_model2.bigrams[3].probabilities[0] = 1.0 / 5.0;
+
+    target_language_model2.bigrams[3].first_words[1] = 6;
+    target_language_model2.bigrams[3].probabilities[1] = 1.0 / 5.0;
+
+    target_language_model2.bigrams[4].number_of_first_words = 1;
+    target_language_model2.bigrams[4].first_words = malloc(1*sizeof(int));
+    target_language_model2.bigrams[4].probabilities = malloc(1*sizeof(float));
+
+    target_language_model2.bigrams[4].first_words[0] = 6;
+    target_language_model2.bigrams[4].probabilities[0] = 3.0 / 5.0;
+
+    target_language_model2.bigrams[5].number_of_first_words = 2;
+    target_language_model2.bigrams[5].first_words = malloc(2*sizeof(int));
+    target_language_model2.bigrams[5].probabilities = malloc(2*sizeof(float));
+
+    target_language_model2.bigrams[5].first_words[0] = 2;
+    target_language_model2.bigrams[5].probabilities[0] = 2.0 / 5.0;
+
+    target_language_model2.bigrams[5].first_words[1] = 7;
+    target_language_model2.bigrams[5].probabilities[1] = 1.0 / 2.0;
+
+    target_language_model2.bigrams[6].number_of_first_words = 4;
+    target_language_model2.bigrams[6].first_words = malloc(4*sizeof(int));
+    target_language_model2.bigrams[6].probabilities = malloc(4*sizeof(float));
+
+    target_language_model2.bigrams[6].first_words[0] = 1;
+    target_language_model2.bigrams[6].probabilities[0] = 2.0 / 4.0;
+
+    target_language_model2.bigrams[6].first_words[1] = 2;
+    target_language_model2.bigrams[6].probabilities[1] = 1.0 / 5.0;
+
+    target_language_model2.bigrams[6].first_words[2] = 7;
+    target_language_model2.bigrams[6].probabilities[2] = 1.0 / 2.0;
+
+    target_language_model2.bigrams[6].first_words[3] = 9;
+    target_language_model2.bigrams[6].probabilities[3] = 1.0 / 5.0;
+
+    target_language_model2.bigrams[7].number_of_first_words = 1;
+    target_language_model2.bigrams[7].first_words = malloc(1*sizeof(int));
+    target_language_model2.bigrams[7].probabilities = malloc(1*sizeof(float));
+
+    target_language_model2.bigrams[7].first_words[0] = 5;
+    target_language_model2.bigrams[7].probabilities[0] = 2.0 / 5.0;
+
+    target_language_model2.bigrams[8].number_of_first_words = 2;
+    target_language_model2.bigrams[8].first_words = malloc(2*sizeof(int));
+    target_language_model2.bigrams[8].probabilities = malloc(2*sizeof(float));
+
+    target_language_model2.bigrams[8].first_words[0] = 5;
+    target_language_model2.bigrams[8].probabilities[0] = 1.0 / 5.0;
+
+    target_language_model2.bigrams[8].first_words[1] = 9;
+    target_language_model2.bigrams[8].probabilities[1] = 1.0 / 5.0;
+
+    target_language_model2.bigrams[9].number_of_first_words = 3;
+    target_language_model2.bigrams[9].first_words = malloc(3*sizeof(int));
+    target_language_model2.bigrams[9].probabilities = malloc(3*sizeof(float));
+
+    target_language_model2.bigrams[9].first_words[0] = 0;
+    target_language_model2.bigrams[9].probabilities[0] = 1.0 / 3.0;
+
+    target_language_model2.bigrams[9].first_words[1] = 3;
+    target_language_model2.bigrams[9].probabilities[1] = 3.0 / 3.0;
+
+    target_language_model2.bigrams[9].first_words[2] = 8;
+    target_language_model2.bigrams[9].probabilities[2] = 1.0 / 2.0;
+
+    for (i = 0; i < target_language_model2.unigrams_number; i++)
+    {
+        j = 0;
+        while (j < target_language_model2.bigrams[i].number_of_first_words)
         {
-            i++;
-        }
-        else
-        {
-            n = target_language_model2.bigrams_number - i - 1;
-            if (n > 0)
+            if (target_language_model2.bigrams[i].probabilities[j] >= eps2)
             {
-                memmove(&(target_language_model2.bigrams[i]),
-                        &(target_language_model2.bigrams[i+1]),
-                        n * sizeof(TWordBigram));
+                j++;
             }
-            target_language_model2.bigrams_number--;
+            else
+            {
+                n = target_language_model2.bigrams[i].number_of_first_words;
+                memmove(target_language_model2.bigrams[i].first_words+j,
+                        target_language_model2.bigrams[i].first_words+j+1,
+                        (n-j-1) * sizeof(int));
+                memmove(target_language_model2.bigrams[i].probabilities+j,
+                        target_language_model2.bigrams[i].probabilities+j+1,
+                        (n-j-1) * sizeof(float));
+                target_language_model2.bigrams[i].number_of_first_words--;
+            }
         }
     }
 }
@@ -360,21 +407,20 @@ static void create_target_language_model2()
 
 static int compare_language_models(TLanguageModel m1, TLanguageModel m2)
 {
-    int i, n, res = 1;
+    int i, j, n, res = 1;
 
-    if ((m1.bigrams_number <= 0)||(m1.bigrams == NULL)
-            || (m1.unigrams_number <= 0)||(m1.unigrams_probabilities == NULL))
+    if ((m1.bigrams == NULL) || (m1.unigrams_number <= 0)
+            || (m1.unigrams_probabilities == NULL))
     {
         return 0;
     }
-    if ((m2.bigrams_number <= 0)||(m2.bigrams == NULL)
-            || (m2.unigrams_number <= 0)||(m2.unigrams_probabilities == NULL))
+    if ((m2.bigrams == NULL) || (m2.unigrams_number <= 0)
+            || (m2.unigrams_probabilities == NULL))
     {
         return 0;
     }
 
-    if ((m1.unigrams_number != m2.unigrams_number)
-            || (m1.bigrams_number != m2.bigrams_number))
+    if ((m1.unigrams_number != m2.unigrams_number))
     {
         return 0;
     }
@@ -394,23 +440,30 @@ static int compare_language_models(TLanguageModel m1, TLanguageModel m2)
         return 0;
     }
 
-    n = m1.bigrams_number;
-    for (i = 0; i < n; i++)
+    for (i = 0; i < m1.unigrams_number; i++)
     {
-        if (m1.bigrams[i].first_word != m2.bigrams[i].first_word)
+        n = m1.bigrams[i].number_of_first_words;
+        if (n != m2.bigrams[i].number_of_first_words)
         {
             res = 0;
             break;
         }
-        if (m1.bigrams[i].second_word != m2.bigrams[i].second_word)
+        for (j = 0; j < n; j++)
         {
-            res = 0;
-            break;
+            if (m1.bigrams[i].first_words[j] != m2.bigrams[i].first_words[j])
+            {
+                res = 0;
+                break;
+            }
+            if (fabs(m1.bigrams[i].probabilities[j]
+                     - m2.bigrams[i].probabilities[j]) > FLT_EPSILON)
+            {
+                res = 0;
+                break;
+            }
         }
-        if (fabs(m1.bigrams[i].probability - m2.bigrams[i].probability)
-                > FLT_EPSILON)
+        if (!res)
         {
-            res = 0;
             break;
         }
     }
@@ -466,7 +519,6 @@ void calculate_language_model_valid_test_1()
     int calculated_res = 0, compare_res = 0;
 
     calculated_model.bigrams = NULL;
-    calculated_model.bigrams_number = 0;
     calculated_model.unigrams_number = 0;
     calculated_model.unigrams_probabilities = NULL;
 
@@ -490,7 +542,6 @@ void calculate_language_model_valid_test_2()
     int calculated_res = 0, compare_res = 0;
 
     calculated_model.bigrams = NULL;
-    calculated_model.bigrams_number = 0;
     calculated_model.unigrams_number = 0;
     calculated_model.unigrams_probabilities = NULL;
 
@@ -514,7 +565,6 @@ void calculate_language_model_invalid_test_1()
     int calculated_res = 0;
 
     calculated_model.bigrams = NULL;
-    calculated_model.bigrams_number = 0;
     calculated_model.unigrams_number = 0;
     calculated_model.unigrams_probabilities = NULL;
 
