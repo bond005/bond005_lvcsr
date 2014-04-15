@@ -130,15 +130,23 @@ typedef struct {
                                           events. */
 } TMLFFilePart;
 
+/*! \struct TWordBigramBegin
+ * \brief Structure for representation of begin of some words bigram.
+ */
+typedef struct _TWordBigramBegin {
+    int word_i;       /**< Index of bigram's first word in vocabulary. */
+    float probability;/**< Probability of bigram begun in this word. */
+} TWordBigramBegin;
+
 /*! \struct TWordBigram
  * \brief Structure for representation of several words bigrams, which are
  * ended in the given word.
  */
 typedef struct _TWordBigram {
-    int number_of_first_words; /**< Number of first words in bigrams. */
-    int *first_words;          /**< Indexes of first words in bigrams. */
-    float *probabilities;      /**< Probabilities of bigrams, which are
-                                    begun in corresponding first words. */
+    int begins_number;       /**< Number of bigrams which are ended in this
+                                  word. */
+    TWordBigramBegin *begins;/**< First parts (begins) of bigrams which are
+                                  ended in this word. */
 } TWordBigram;
 
 /*! \struct TLanguageModel

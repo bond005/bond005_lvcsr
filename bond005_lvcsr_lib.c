@@ -246,19 +246,22 @@ static float find_bigram(TLanguageModel language_model, float lambda,
     int i = *cur_bigram_i;
     float bigram_probability = 0.0;
 
-    while (i < language_model.bigrams[end_word_i].number_of_first_words)
+    while (i < language_model.bigrams[end_word_i].begins_number)
     {
-        if (language_model.bigrams[end_word_i].first_words[i] >= start_word_i)
+        if (language_model.bigrams[end_word_i].begins[i].word_i>=start_word_i)
         {
             break;
         }
         i++;
     }
     *cur_bigram_i = i;
-    if (i < language_model.bigrams[end_word_i].number_of_first_words)
+    if (i < language_model.bigrams[end_word_i].begins_number)
     {
-        bigram_probability
-                = language_model.bigrams[end_word_i].probabilities[i];
+        if (language_model.bigrams[end_word_i].begins[i].word_i==start_word_i)
+        {
+            bigram_probability
+                    = language_model.bigrams[end_word_i].begins[i].probability;
+        }
     }
 
     bigram_probability = lambda * bigram_probability + (1.0 - lambda)
@@ -280,7 +283,8 @@ static int calculate_viterbi_matrix(
     int t_count, t = 0, w, s, S, i, v, v_max;
     float tmp_val1, tmp_val2, tmp_d, bigram_probability;
     float max_cost, min_cost, cost_threshold;
-    double start_time, end_time; // for debug
+    int *predecessors = malloc(sizeof(int) * data.words_number);
+    //double start_time, end_time; // for debug
 
     t = 0; s = 1;
     inp_phoneme_i = src_phonemes_sequence[t];
@@ -309,7 +313,7 @@ static int calculate_viterbi_matrix(
             shift_viterbi_matrix(data);
         }
         inp_phoneme_i = src_phonemes_sequence[t_count];
-        start_time = omp_get_wtime(); // for debug
+        //start_time = omp_get_wtime(); // for debug
         for (w = 0; w < nwords; w++)
         {
             s = 1;
@@ -342,12 +346,12 @@ static int calculate_viterbi_matrix(
                 if (confusion_penalties[i] > (-FLT_MAX + FLT_EPSILON))
                 {
                     tmp_d += confusion_penalties[i];
-                    tmp_val1 = data.cells[t-1][w][s].cost;
+                    tmp_val1 = data.cells[t-1][w][s-1].cost;
                     if (tmp_val1 > (-FLT_MAX + FLT_EPSILON))
                     {
                         tmp_val1 += tmp_d;
                     }
-                    tmp_val2 = data.cells[t-1][w][s-1].cost;
+                    tmp_val2 = data.cells[t-1][w][s].cost;
                     if (tmp_val2 > (-FLT_MAX + FLT_EPSILON))
                     {
                         tmp_val2 += tmp_d;
@@ -361,12 +365,12 @@ static int calculate_viterbi_matrix(
                 if (tmp_val1 >= tmp_val2)
                 {
                     data.cells[t][w][s].cost = tmp_val1;
-                    data.cells[t][w][s].btp = data.cells[t-1][w][s].btp;
+                    data.cells[t][w][s].btp = data.cells[t-1][w][s-1].btp;
                 }
                 else
                 {
                     data.cells[t][w][s].cost = tmp_val2;
-                    data.cells[t][w][s].btp = data.cells[t-1][w][s-1].btp;
+                    data.cells[t][w][s].btp = data.cells[t-1][w][s].btp;
                 }
             }
 
@@ -399,8 +403,8 @@ static int calculate_viterbi_matrix(
                 data.cells[t][w][s].btp = data.cells[t-1][w][s].btp;
             }
         }
-        end_time = omp_get_wtime(); // for debug
-        printf("%.3f\t", end_time - start_time); // for debug
+        //end_time = omp_get_wtime(); // for debug
+        //printf("%.3f\t", end_time - start_time); // for debug
 
         if (pruning_coeff > 0.0)
         {
@@ -445,7 +449,7 @@ static int calculate_viterbi_matrix(
             }
         }
 
-        start_time = omp_get_wtime(); // for debug
+        //start_time = omp_get_wtime(); // for debug
         #pragma omp parallel for private(v,v_max,S,bigram_i,\
                                          bigram_probability,tmp_val1,tmp_val2)
         for (w = 0; w < data.words_number; w++)
@@ -494,16 +498,18 @@ static int calculate_viterbi_matrix(
             }
 
             data.cells[t][w][0].cost = tmp_val1;
-            data.cells[t][w][0].btp = t_count - 1;
+            data.cells[t][w][0].btp = t_count-1;
 
             if (data.cells[t][w][0].cost > data.cells[t][w][1].cost)
             {
                 data.cells[t][w][1].cost = data.cells[t][w][0].cost;
                 data.cells[t][w][1].btp = data.cells[t][w][0].btp;
             }
+
+            predecessors[w] = v_max;
         }
-        end_time = omp_get_wtime(); // for debug
-        printf("%.3f\n", end_time - start_time); // for debug
+        //end_time = omp_get_wtime(); // for debug
+        //printf("%.3f\n", end_time - start_time); // for debug
 
         v_max = 0;
         for (v = 1; v < data.words_number; v++)
@@ -521,10 +527,36 @@ static int calculate_viterbi_matrix(
             break;
         }
         traceback_array[t_count-1].predecessor_word
-                = data.words_indexes[v_max];
+                = data.words_indexes[predecessors[v_max]];
         traceback_array[t_count-1].start_time
                 = data.cells[t][v_max][data.words_sizes[v_max]].btp;
     }
+    if (is_ok)
+    {
+        v_max = 0;
+        for (v = 1; v < data.words_number; v++)
+        {
+            if (data.cells[t][v][data.words_sizes[v]].cost
+                    > data.cells[t][v_max][data.words_sizes[v_max]].cost)
+            {
+                v_max = v;
+            }
+        }
+        if (data.cells[t][v_max][data.words_sizes[v_max]].cost
+                <= (-FLT_MAX + FLT_EPSILON))
+        {
+            is_ok = 0;
+        }
+        else
+        {
+            traceback_array[data.times_number-1].predecessor_word
+                    = data.words_indexes[v_max];
+            traceback_array[data.times_number-1].start_time
+                    = data.cells[t][v_max][data.words_sizes[v_max]].btp;
+        }
+    }
+
+    free(predecessors);
 
     return is_ok;
 }
@@ -537,8 +569,12 @@ static int get_words_sequence_by_traceback_array(
 
     while (i >= 0)
     {
+        if (traceback_array[i].start_time < 0)
+        {
+            break;
+        }
         recognized_words_sequence[n++] = traceback_array[i].predecessor_word;
-        i = traceback_array[i].start_time;
+        i = traceback_array[i].start_time - 1;
     }
 
     for (i = 0; i < (n / 2); i++)
@@ -640,48 +676,12 @@ static int create_phonemes_sequence_by_transcription(
     return phonemes_sequence_length;
 }
 
-static void sort_bigrams(int first_words[], float probabilities[], int n)
+static int compare_begins_of_bigrams(const void *ptr1, const void *ptr2)
 {
-    int tmp_int, ref, left = 0, right = n-1;
-    float tmp_float;
+    TWordBigramBegin *item1 = (TWordBigramBegin*)ptr1;
+    TWordBigramBegin *item2 = (TWordBigramBegin*)ptr2;
 
-    if (n <= 1)
-    {
-        return;
-    }
-
-    ref = first_words[n << 1];
-    while (left < right)
-    {
-        while (first_words[left] < ref)
-        {
-            left++;
-        }
-        while (first_words[right] > ref)
-        {
-            right--;
-        }
-        if (left < right)
-        {
-            tmp_int = first_words[left];
-            first_words[left] = first_words[right];
-            first_words[right] = tmp_int;
-            tmp_float = probabilities[left];
-            probabilities[left] = probabilities[right];
-            probabilities[right] = tmp_float;
-            left++;
-            right--;
-        }
-    }
-
-    if (right > 0)
-    {
-        sort_bigrams(first_words, probabilities, right);
-    }
-    if (left < (n-1))
-    {
-        sort_bigrams(first_words + left, probabilities + left, n - left);
-    }
+    return (item1->word_i - item2->word_i);
 }
 
 static int compare_items_of_words_lexicon(const void *ptr1, const void *ptr2)
@@ -1855,9 +1855,8 @@ int load_language_model(char *file_name,  int words_number,
     language_model->bigrams = malloc(n * sizeof(TWordBigram));
     for (i = 0; i < n; i++)
     {
-        language_model->bigrams[i].number_of_first_words = 0;
-        language_model->bigrams[i].first_words = NULL;
-        language_model->bigrams[i].probabilities = NULL;
+        language_model->bigrams[i].begins_number = 0;
+        language_model->bigrams[i].begins = NULL;
     }
     if (fread(language_model->unigrams_probabilities, sizeof(float), n, h_file)
             != n)
@@ -1896,33 +1895,27 @@ int load_language_model(char *file_name,  int words_number,
         }
         if (n > 0)
         {
-            language_model->bigrams[i].number_of_first_words = n;
-            language_model->bigrams[i].first_words = malloc(n * sizeof(int));
-            language_model->bigrams[i].probabilities
-                    = malloc(n * sizeof(float));
-            if (fread(language_model->bigrams[i].first_words, sizeof(int),
-                      n, h_file) != n)
-            {
-                is_ok = 0;
-                break;
-            }
-            if (fread(language_model->bigrams[i].probabilities, sizeof(float),
-                      n, h_file) != n)
+            language_model->bigrams[i].begins_number = n;
+            language_model->bigrams[i].begins
+                    = malloc(n * sizeof(TWordBigramBegin));
+            if (fread(language_model->bigrams[i].begins,
+                      sizeof(TWordBigramBegin), n, h_file) != n)
             {
                 is_ok = 0;
                 break;
             }
             for (j = 0; j < n; j++)
             {
-                if ((language_model->bigrams[i].first_words[j] < 0)
-                        || (language_model->bigrams[i].first_words[j]
+                if ((language_model->bigrams[i].begins[j].word_i < 0)
+                        || (language_model->bigrams[i].begins[j].word_i
                             >= language_model->unigrams_number))
                 {
                     is_ok = 0;
                     break;
                 }
-                if ((language_model->bigrams[i].probabilities[j] < 0.0)
-                        ||(language_model->bigrams[i].probabilities[j] >= 1.0))
+                if ((language_model->bigrams[i].begins[j].probability < 0.0)
+                        ||(language_model->bigrams[i].begins[j].probability
+                           > 1.0))
                 {
                     is_ok = 0;
                     break;
@@ -1932,8 +1925,9 @@ int load_language_model(char *file_name,  int words_number,
             {
                 break;
             }
-            sort_bigrams(language_model->bigrams[i].first_words,
-                         language_model->bigrams[i].probabilities, n);
+            qsort(language_model->bigrams[i].begins,
+                  language_model->bigrams[i].begins_number,
+                  sizeof(TWordBigramBegin), compare_begins_of_bigrams);
         }
     }
     if (!is_ok)
@@ -1977,7 +1971,7 @@ int save_language_model(char *file_name, TLanguageModel language_model)
 
     for (i = 0; i < language_model.unigrams_number; i++)
     {
-        n = language_model.bigrams[i].number_of_first_words;
+        n = language_model.bigrams[i].begins_number;
         if (fwrite(&n, sizeof(int), 1, h_file) != 1)
         {
             is_ok = 0;
@@ -1985,14 +1979,8 @@ int save_language_model(char *file_name, TLanguageModel language_model)
         }
         if (n > 0)
         {
-            if (fwrite(language_model.bigrams[i].first_words, sizeof(int),
-                       n, h_file) != n)
-            {
-                is_ok = 0;
-                break;
-            }
-            if (fwrite(language_model.bigrams[i].probabilities, sizeof(float),
-                       n, h_file) != n)
+            if (fwrite(language_model.bigrams[i].begins,
+                       sizeof(TWordBigramBegin), n, h_file) != n)
             {
                 is_ok = 0;
                 break;
@@ -2028,9 +2016,8 @@ int calculate_language_model(TMLFFilePart *words_mlf_data, int files_number,
     for (i = 0; i < words_number; i++)
     {
         language_model->unigrams_probabilities[i] = 0.0;
-        language_model->bigrams[i].number_of_first_words = 0;
-        language_model->bigrams[i].first_words = NULL;
-        language_model->bigrams[i].probabilities = NULL;
+        language_model->bigrams[i].begins_number = 0;
+        language_model->bigrams[i].begins = NULL;
     }
 
     for (i = 0; i < files_number; i++)
@@ -2080,10 +2067,10 @@ int calculate_language_model(TMLFFilePart *words_mlf_data, int files_number,
             first_i = words_mlf_data[i].transcription[j-1].node_data;
             second_i = words_mlf_data[i].transcription[j].node_data;
             bigram_i = 0;
-            nwords = language_model->bigrams[second_i].number_of_first_words;
+            nwords = language_model->bigrams[second_i].begins_number;
             while (bigram_i < nwords)
             {
-                if (language_model->bigrams[second_i].first_words[bigram_i]
+                if (language_model->bigrams[second_i].begins[bigram_i].word_i
                         == first_i)
                 {
                     break;
@@ -2092,29 +2079,27 @@ int calculate_language_model(TMLFFilePart *words_mlf_data, int files_number,
             }
             if (bigram_i < nwords)
             {
-                language_model->bigrams[second_i].probabilities[bigram_i] += 1.0;
+                language_model->bigrams[second_i].begins[
+                        bigram_i].probability += 1.0;
             }
             else
             {
-                language_model->bigrams[second_i].number_of_first_words++;
+                language_model->bigrams[second_i].begins_number++;
                 if (nwords > 0)
                 {
-                    language_model->bigrams[second_i].first_words = realloc(
-                                language_model->bigrams[second_i].first_words,
-                                sizeof(int) * (nwords + 1));
-                    language_model->bigrams[second_i].probabilities = realloc(
-                                language_model->bigrams[second_i].probabilities,
-                                sizeof(float) * (nwords + 1));
+                    language_model->bigrams[second_i].begins = realloc(
+                                language_model->bigrams[second_i].begins,
+                                sizeof(TWordBigramBegin) * (nwords + 1));
                 }
                 else
                 {
-                    language_model->bigrams[second_i].first_words = malloc(
-                                sizeof(int) * (nwords + 1));
-                    language_model->bigrams[second_i].probabilities = malloc(
-                                sizeof(float) * (nwords + 1));
+                    language_model->bigrams[second_i].begins = malloc(
+                                sizeof(TWordBigramBegin) * (nwords + 1));
                 }
-                language_model->bigrams[second_i].first_words[nwords]=first_i;
-                language_model->bigrams[second_i].probabilities[nwords]=1.0;
+                language_model->bigrams[second_i].begins[nwords].word_i
+                        = first_i;
+                language_model->bigrams[second_i].begins[nwords].probability
+                        = 1.0;
             }
         }
     }
@@ -2123,34 +2108,31 @@ int calculate_language_model(TMLFFilePart *words_mlf_data, int files_number,
     for (i = 0; i < language_model->unigrams_number; i++)
     {
         j = 0;
-        while (j < language_model->bigrams[i].number_of_first_words)
+        while (j < language_model->bigrams[i].begins_number)
         {
-            first_i = language_model->bigrams[i].first_words[j];
-            language_model->bigrams[i].probabilities[j]
+            first_i = language_model->bigrams[i].begins[j].word_i;
+            language_model->bigrams[i].begins[j].probability
                     /= (float)words_frequencies[first_i];
-            if (language_model->bigrams[i].probabilities[j] >= eps)
+            if (language_model->bigrams[i].begins[j].probability >= eps)
             {
                 j++;
             }
             else
             {
-                nwords = language_model->bigrams[i].number_of_first_words;
-                memmove(language_model->bigrams[i].first_words+j,
-                        language_model->bigrams[i].first_words+j+1,
-                        sizeof(int) * (nwords - j - 1));
-                memmove(language_model->bigrams[i].probabilities+j,
-                        language_model->bigrams[i].probabilities+j+1,
-                        sizeof(float) * (nwords - j - 1));
-                language_model->bigrams[i].number_of_first_words--;
+                nwords = language_model->bigrams[i].begins_number;
+                memmove(language_model->bigrams[i].begins+j,
+                        language_model->bigrams[i].begins+j+1,
+                        sizeof(TWordBigramBegin) * (nwords - j - 1));
+                language_model->bigrams[i].begins_number--;
             }
         }
-        if (language_model->bigrams[i].number_of_first_words > 1)
+        nwords = language_model->bigrams[i].begins_number;
+        if (nwords > 1)
         {
-            sort_bigrams(language_model->bigrams[i].first_words,
-                         language_model->bigrams[i].probabilities,
-                         language_model->bigrams[i].number_of_first_words);
+            qsort(language_model->bigrams[i].begins, nwords,
+                  sizeof(TWordBigramBegin), compare_begins_of_bigrams);
         }
-        nbigrams += language_model->bigrams[i].number_of_first_words;
+        nbigrams += nwords;
     }
 
     free(words_frequencies);
@@ -2488,15 +2470,10 @@ void free_language_model(TLanguageModel *language_model)
     {
         for (i = 0; i < language_model->unigrams_number; i++)
         {
-            if (language_model->bigrams[i].first_words != NULL)
+            if (language_model->bigrams[i].begins != NULL)
             {
-                free(language_model->bigrams[i].first_words);
-                language_model->bigrams[i].first_words = NULL;
-            }
-            if (language_model->bigrams[i].probabilities != NULL)
-            {
-                free(language_model->bigrams[i].probabilities);
-                language_model->bigrams[i].probabilities = NULL;
+                free(language_model->bigrams[i].begins);
+                language_model->bigrams[i].begins = NULL;
             }
         }
         free(language_model->bigrams);
@@ -2529,38 +2506,38 @@ float get_bigram_probability(TLanguageModel language_model, int start_word_ind,
 
     item = language_model.bigrams + end_word_ind;
 
-    if (item->number_of_first_words <= 0)
+    if (item->begins_number <= 0)
     {
         return 0.0;
     }
 
-    first = 0; last = item->number_of_first_words;
+    first = 0; last = item->begins_number;
 
-    cmp_res = item->first_words[0] - start_word_ind;
+    cmp_res = item->begins[0].word_i - start_word_ind;
     if (cmp_res > 0)
     {
         return 0.0;
     }
     if (cmp_res == 0)
     {
-        return item->probabilities[0];
+        return item->begins[0].probability;
     }
 
-    cmp_res = item->first_words[last-1] - start_word_ind;
+    cmp_res = item->begins[last-1].word_i - start_word_ind;
     if (cmp_res < 0)
     {
         return 0.0;
     }
     if (cmp_res == 0)
     {
-        return item->probabilities[last-1];
+        return item->begins[last-1].probability;
     }
 
     while (first < last)
     {
         middle = first + (last - first) / 2;
 
-        cmp_res = start_word_ind - item->first_words[middle];
+        cmp_res = start_word_ind - item->begins[middle].word_i;
 
         if (cmp_res <= 0)
         {
@@ -2576,10 +2553,10 @@ float get_bigram_probability(TLanguageModel language_model, int start_word_ind,
         }
     }
 
-    cmp_res = item->first_words[last] - start_word_ind;
+    cmp_res = item->begins[last].word_i - start_word_ind;
     if (cmp_res == 0)
     {
-        return item->probabilities[last];
+        return item->begins[last].probability;
     }
     return 0.0;
 }
@@ -2648,7 +2625,7 @@ int recognize_words(
     {
         if (phonemes_sequence_capacity > 1)
         {
-            traceback_array = malloc((phonemes_sequence_capacity-1)
+            traceback_array = malloc(phonemes_sequence_capacity
                                      * sizeof(TTracebackArrayItem));
         }
         src_phonemes_sequence = malloc(
@@ -2672,7 +2649,7 @@ int recognize_words(
         else
         {
             words_sequence_length = get_words_sequence_by_traceback_array(
-                        traceback_array, phonemes_sequence_capacity - 1,
+                        traceback_array, phonemes_sequence_capacity,
                         words_sequence);
             if (words_sequence_length > 0)
             {
@@ -2728,13 +2705,13 @@ int recognize_words(
             {
                 if (traceback_array == NULL)
                 {
-                    traceback_array = malloc((phonemes_sequence_capacity-1)
+                    traceback_array = malloc(phonemes_sequence_capacity
                                              * sizeof(TTracebackArrayItem));
                 }
                 else
                 {
                     traceback_array = realloc(traceback_array,
-                                              (phonemes_sequence_capacity-1)
+                                              phonemes_sequence_capacity
                                               * sizeof(TTracebackArrayItem));
                 }
             }

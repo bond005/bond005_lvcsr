@@ -25,7 +25,7 @@ static TLanguageModel language_model;
 static float lambda = 1.0;
 static float incorrect_lambda_1 = -1.0;
 static float incorrect_lambda_2 = 1.5;
-static float pruning_coeff = 0.2;
+static float pruning_coeff = 0.0;
 static float incorrect_pruning_coeff_1 = -1.0;
 static float incorrect_pruning_coeff_2 = 1.5;
 static TMLFFilePart *src_mlf_1 = NULL, *src_mlf_2 = NULL;
@@ -184,27 +184,30 @@ int init_suite_recognize_words()
     language_model.unigrams_probabilities[1] = 0.25;
     language_model.unigrams_probabilities[2] = 0.35;
     language_model.bigrams = malloc(3*sizeof(TWordBigram));
-    language_model.bigrams[0].number_of_first_words = 2;
-    language_model.bigrams[0].first_words = malloc(2*sizeof(int));
-    language_model.bigrams[0].probabilities = malloc(2*sizeof(float));
-    language_model.bigrams[0].first_words[0] = 1;
-    language_model.bigrams[0].probabilities[0] = 0.5;
-    language_model.bigrams[0].first_words[1] = 2;
-    language_model.bigrams[0].probabilities[0] = 0.1;
-    language_model.bigrams[1].number_of_first_words = 2;
-    language_model.bigrams[1].first_words = malloc(2*sizeof(int));
-    language_model.bigrams[1].probabilities = malloc(2*sizeof(float));
-    language_model.bigrams[1].first_words[0] = 0;
-    language_model.bigrams[1].probabilities[0] = 0.2;
-    language_model.bigrams[1].first_words[1] = 2;
-    language_model.bigrams[1].probabilities[0] = 0.9;
-    language_model.bigrams[2].number_of_first_words = 2;
-    language_model.bigrams[2].first_words = malloc(2*sizeof(int));
-    language_model.bigrams[2].probabilities = malloc(2*sizeof(float));
-    language_model.bigrams[2].first_words[0] = 0;
-    language_model.bigrams[2].probabilities[0] = 0.8;
-    language_model.bigrams[2].first_words[1] = 1;
-    language_model.bigrams[2].probabilities[0] = 0.5;
+    language_model.bigrams[0].begins_number = 2;
+    language_model.bigrams[0].begins = malloc(2*sizeof(TWordBigramBegin));
+    //1->0
+    language_model.bigrams[0].begins[0].word_i = 1;
+    language_model.bigrams[0].begins[0].probability = 0.5;
+    //2->0
+    language_model.bigrams[0].begins[1].word_i = 2;
+    language_model.bigrams[0].begins[1].probability = 0.1;
+    language_model.bigrams[1].begins_number = 2;
+    language_model.bigrams[1].begins = malloc(2*sizeof(TWordBigramBegin));
+    //0->1
+    language_model.bigrams[1].begins[0].word_i = 0;
+    language_model.bigrams[1].begins[0].probability = 0.2;
+    //2->1
+    language_model.bigrams[1].begins[1].word_i = 2;
+    language_model.bigrams[1].begins[1].probability = 0.9;
+    language_model.bigrams[2].begins_number = 2;
+    language_model.bigrams[2].begins = malloc(2*sizeof(TWordBigramBegin));
+    //0->2
+    language_model.bigrams[2].begins[0].word_i = 0;
+    language_model.bigrams[2].begins[0].probability = 0.8;
+    //1->2
+    language_model.bigrams[2].begins[1].word_i = 1;
+    language_model.bigrams[2].begins[1].probability = 0.5;
 
     n = strlen(INP_MLF_PART_NAME);
     src_mlf_1 = malloc(sizeof(TMLFFilePart));

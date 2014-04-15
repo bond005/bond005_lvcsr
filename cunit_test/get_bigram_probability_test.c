@@ -16,33 +16,29 @@ static void create_language_model_for_testing()
     language_model.unigrams_probabilities = malloc(4 * sizeof(float));
     language_model.bigrams = malloc(4 * sizeof(TWordBigram));
 
-    language_model.bigrams[0].number_of_first_words = 2;
-    language_model.bigrams[0].first_words = malloc(2 * sizeof(int));
-    language_model.bigrams[0].probabilities = malloc(2 * sizeof(float));
-    language_model.bigrams[0].first_words[0] = 1;
-    language_model.bigrams[0].probabilities[0] = 0.13;
-    language_model.bigrams[0].first_words[1] = 3;
-    language_model.bigrams[0].probabilities[1] = 0.2;
+    language_model.bigrams[0].begins_number = 2;
+    language_model.bigrams[0].begins = malloc(2 * sizeof(TWordBigramBegin));
+    language_model.bigrams[0].begins[0].word_i = 1;
+    language_model.bigrams[0].begins[0].probability = 0.13;
+    language_model.bigrams[0].begins[1].word_i = 3;
+    language_model.bigrams[0].begins[1].probability = 0.2;
 
-    language_model.bigrams[1].number_of_first_words = 0;
-    language_model.bigrams[1].first_words = NULL;
-    language_model.bigrams[1].probabilities = NULL;
+    language_model.bigrams[1].begins_number = 0;
+    language_model.bigrams[1].begins = NULL;
 
-    language_model.bigrams[2].number_of_first_words = 2;
-    language_model.bigrams[2].first_words = malloc(2 * sizeof(int));
-    language_model.bigrams[2].probabilities = malloc(2 * sizeof(float));
-    language_model.bigrams[2].first_words[0] = 0;
-    language_model.bigrams[2].probabilities[0] = 0.23;
-    language_model.bigrams[2].first_words[1] = 3;
-    language_model.bigrams[2].probabilities[1] = 0.25;
+    language_model.bigrams[2].begins_number = 2;
+    language_model.bigrams[2].begins = malloc(2 * sizeof(TWordBigramBegin));
+    language_model.bigrams[2].begins[0].word_i = 0;
+    language_model.bigrams[2].begins[0].probability = 0.23;
+    language_model.bigrams[2].begins[1].word_i = 3;
+    language_model.bigrams[2].begins[1].probability = 0.25;
 
-    language_model.bigrams[3].number_of_first_words = 2;
-    language_model.bigrams[3].first_words = malloc(2 * sizeof(int));
-    language_model.bigrams[3].probabilities = malloc(2 * sizeof(float));
-    language_model.bigrams[3].first_words[0] = 0;
-    language_model.bigrams[3].probabilities[0] = 0.11;
-    language_model.bigrams[3].first_words[1] = 2;
-    language_model.bigrams[3].probabilities[1] = 0.08;
+    language_model.bigrams[3].begins_number = 2;
+    language_model.bigrams[3].begins = malloc(2 * sizeof(TWordBigramBegin));
+    language_model.bigrams[3].begins[0].word_i = 0;
+    language_model.bigrams[3].begins[0].probability = 0.11;
+    language_model.bigrams[3].begins[1].word_i = 2;
+    language_model.bigrams[3].begins[1].probability = 0.08;
 
     language_model.unigrams_probabilities[0] = 0.2;
     language_model.unigrams_probabilities[1] = 0.3;
@@ -101,8 +97,8 @@ void get_bigram_probability_valid_test_1()
     float probability, target_probability;
     int first_word, second_word;
 
-    target_probability = language_model.bigrams[2].probabilities[1];
-    first_word = language_model.bigrams[2].first_words[1];
+    target_probability = language_model.bigrams[2].begins[1].probability;
+    first_word = language_model.bigrams[2].begins[1].word_i;
     second_word = 2;
     probability = get_bigram_probability(language_model,
                                          first_word, second_word);
@@ -114,8 +110,8 @@ void get_bigram_probability_valid_test_2()
     float probability, target_probability;
     int first_word, second_word;
 
-    target_probability = language_model.bigrams[0].probabilities[0];
-    first_word = language_model.bigrams[0].first_words[0];
+    target_probability = language_model.bigrams[0].begins[0].probability;
+    first_word = language_model.bigrams[0].begins[0].word_i;
     second_word = 0;
     probability = get_bigram_probability(language_model,
                                          first_word, second_word);
@@ -130,8 +126,8 @@ void get_bigram_probability_valid_test_3()
 
     n = language_model.unigrams_number;
 
-    target_probability = language_model.bigrams[n-1].probabilities[0];
-    first_word = language_model.bigrams[n-1].first_words[0];
+    target_probability = language_model.bigrams[n-1].begins[0].probability;
+    first_word = language_model.bigrams[n-1].begins[0].word_i;
     second_word = n-1;
     probability = get_bigram_probability(language_model,
                                          first_word, second_word);

@@ -12,25 +12,12 @@
 static TLanguageModel target_language_model;
 static char *language_model_name = "saved_language_model.dat";
 
-static int compare_int_values(const void *ptr1, const void *ptr2)
+static int compare_begins_of_bigrams(const void *ptr1, const void *ptr2)
 {
-    int *val1 = (int*)ptr1;
-    int *val2 = (int*)ptr2;
+    TWordBigramBegin *item1 = (TWordBigramBegin*)ptr1;
+    TWordBigramBegin *item2 = (TWordBigramBegin*)ptr2;
 
-    if ((val1 == NULL) && (val2 == NULL))
-    {
-        return 0;
-    }
-    if (val1 == NULL)
-    {
-        return -1;
-    }
-    if (val2 == NULL)
-    {
-        return 1;
-    }
-
-    return (*val1 - *val2);
+    return (item1->word_i - item2->word_i);
 }
 
 static void create_target_language_model()
@@ -49,26 +36,24 @@ static void create_target_language_model()
     {
         target_language_model.unigrams_probabilities[i]
                 = rand() / (float)RAND_MAX;
-        target_language_model.bigrams[i].number_of_first_words = 0;
-        target_language_model.bigrams[i].first_words = NULL;
-        target_language_model.bigrams[i].probabilities = NULL;
+        target_language_model.bigrams[i].begins_number = 0;
+        target_language_model.bigrams[i].begins = NULL;
     }
     for (i = 0; i < UNIGRAMS_NUMBER; i++)
     {
         n = rand() % (3 * UNIGRAMS_NUMBER) + 1;
-        target_language_model.bigrams[i].number_of_first_words = n;
-        target_language_model.bigrams[i].first_words = malloc(n * sizeof(int));
-        target_language_model.bigrams[i].probabilities
-                = malloc(n * sizeof(float));
+        target_language_model.bigrams[i].begins_number = n;
+        target_language_model.bigrams[i].begins
+                = malloc(n * sizeof(TWordBigramBegin));
         for (j = 0; j < n; j++)
         {
-            target_language_model.bigrams[i].first_words[j]
+            target_language_model.bigrams[i].begins[j].word_i
                     = rand() % UNIGRAMS_NUMBER;
-            target_language_model.bigrams[i].first_words[j]
+            target_language_model.bigrams[i].begins[j].probability
                     = rand() / (float)RAND_MAX;
         }
-        qsort(target_language_model.bigrams[i].first_words, n, sizeof(int),
-              compare_int_values);
+        qsort(target_language_model.bigrams[i].begins, n,
+              sizeof(TWordBigramBegin), compare_begins_of_bigrams);
     }
 }
 
@@ -109,21 +94,21 @@ static int compare_language_models(TLanguageModel m1, TLanguageModel m2)
 
     for (i = 0; i < m1.unigrams_number; i++)
     {
-        n = m1.bigrams[i].number_of_first_words;
-        if (n != m2.bigrams[i].number_of_first_words)
+        n = m1.bigrams[i].begins_number;
+        if (n != m2.bigrams[i].begins_number)
         {
             res = 0;
             break;
         }
         for (j = 0; j < n; j++)
         {
-            if (m1.bigrams[i].first_words[j] != m2.bigrams[i].first_words[j])
+            if (m1.bigrams[i].begins[j].word_i!=m2.bigrams[i].begins[j].word_i)
             {
                 res = 0;
                 break;
             }
-            if (fabs(m1.bigrams[i].probabilities[j]
-                     - m2.bigrams[i].probabilities[j]) > FLT_EPSILON)
+            if (fabs(m1.bigrams[i].begins[j].probability
+                     - m2.bigrams[i].begins[j].probability) > FLT_EPSILON)
             {
                 res = 0;
                 break;
