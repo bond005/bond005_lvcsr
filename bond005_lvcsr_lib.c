@@ -533,10 +533,6 @@ static int calculate_viterbi_matrix(
                                          bigram_probability,tmp_val1,tmp_val2)
         for (w = 0; w < data.words_number; w++)
         {
-            if (data.cells[t][w][s].cost <= (-FLT_MAX + FLT_EPSILON))
-            {
-                continue;
-            }
             bigram_i = 0;
             v_max = 0;
             S = data.words_sizes[v_max];
