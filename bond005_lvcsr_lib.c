@@ -32,6 +32,7 @@
 
 #define INTERVAL_10MSECS 100000.0
 #define MAX_REPEATS_OF_PHONEME 2
+#define HISTOGRAM_SIZE 20
 
 /* Structure for representation of one cell of the matrix which is used in the
  * Viterbi Beam Search algorithm (see X.Huang, Spoken Language Processing,
@@ -67,6 +68,11 @@ typedef struct _TViterbiMatrix {
     TViterbiMatrixCell ***cells;/* 3-dimension matrix for the Viterbi Beam
                                    Search algorithm */
 } TViterbiMatrix;
+
+typedef struct _THistogram {
+    int number;
+    float left, right;
+} THistogram;
 
 void set_new_file_extension(char src[], char extension[])
 {
@@ -270,6 +276,117 @@ static float find_bigram(TLanguageModel language_model, float lambda,
     return bigram_probability;
 }
 
+static void prune_hypotheses(TViterbiMatrix data, int t, float pruning_coeff,
+                             THistogram histogram[])
+{
+    int w, s, i;
+    float max_cost, min_cost, dcost, cost_threshold;
+    int number_of_all_hypotheses = 0, number_of_unpruned_hypotheses = 0;
+    int max_number_of_unpruned_hypotheses;
+
+    if (pruning_coeff <= 0)
+    {
+        return;
+    }
+
+    w = 0; s = 1;
+    max_cost = data.cells[t][w][s].cost;
+    min_cost = data.cells[t][w][s].cost;
+    for (w = 0; w < data.words_number; w++)
+    {
+        for (s = 1; s <= data.words_sizes[w]; s++)
+        {
+            if (data.cells[t][w][s].cost <= (-FLT_MAX + FLT_EPSILON))
+            {
+                continue;
+            }
+            if (data.cells[t][w][s].cost > max_cost)
+            {
+                max_cost = data.cells[t][w][s].cost;
+            }
+            if (data.cells[t][w][s].cost < min_cost)
+            {
+                min_cost = data.cells[t][w][s].cost;
+            }
+        }
+        number_of_all_hypotheses += data.words_sizes[w];
+    }
+    if ((max_cost <= (-FLT_MAX + FLT_EPSILON))
+            || (min_cost <= (-FLT_MAX + FLT_EPSILON)))
+    {
+        return;
+    }
+    if ((max_cost - min_cost) <= FLT_EPSILON)
+    {
+        return;
+    }
+    max_number_of_unpruned_hypotheses = (int)floor(
+                (1.0 - pruning_coeff) * number_of_all_hypotheses + 0.5);
+    if (max_number_of_unpruned_hypotheses >= number_of_all_hypotheses)
+    {
+        return;
+    }
+
+    dcost = (max_cost - min_cost) / (HISTOGRAM_SIZE - 1);
+    histogram[0].number = 0;
+    histogram[0].left = max_cost - dcost;
+    histogram[0].right = max_cost;
+    for (i = 1; i < (HISTOGRAM_SIZE - 1); i++)
+    {
+        histogram[i].number = 0;
+        histogram[i].right = histogram[i-1].left;
+        histogram[i].left = histogram[i].right - dcost;
+    }
+    histogram[HISTOGRAM_SIZE-1].right = histogram[HISTOGRAM_SIZE-2].left;
+    histogram[HISTOGRAM_SIZE-1].left = -FLT_MAX;
+    histogram[HISTOGRAM_SIZE-1].number = 0;
+
+    for (w = 0; w < data.words_number; w++)
+    {
+        for (s = 1; s <= data.words_sizes[w]; s++)
+        {
+            i = 0;
+            while (i < HISTOGRAM_SIZE)
+            {
+                if ((histogram[i].left <= data.cells[t][w][s].cost)
+                        && (data.cells[t][w][s].cost <= histogram[i].right))
+                {
+                    histogram[i].number++;
+                    break;
+                }
+                i++;
+            }
+        }
+    }
+
+    i = 1;
+    cost_threshold = histogram[0].left;
+    number_of_unpruned_hypotheses = histogram[0].number;
+    while (i < HISTOGRAM_SIZE)
+    {
+        if (number_of_unpruned_hypotheses > max_number_of_unpruned_hypotheses)
+        {
+            break;
+        }
+        cost_threshold = histogram[i].left;
+        number_of_unpruned_hypotheses += histogram[i].number;
+        i++;
+    }
+
+    for (w = 0; w < data.words_number; w++)
+    {
+        for (s = 1; s <= data.words_sizes[w]; s++)
+        {
+            if ((data.cells[t][w][s].cost <= cost_threshold)
+                    && (data.cells[t][w][s].cost > (-FLT_MAX + FLT_EPSILON)))
+            {
+                data.cells[t][w][s].cost = -FLT_MAX;
+                data.cells[t][w][s].btp = -1;
+            }
+        }
+    }
+}
+
 static int calculate_viterbi_matrix(
         TViterbiMatrix data, TTracebackArray traceback_array,
         int src_phonemes_sequence[], float src_phonemes_weights[],
@@ -282,8 +399,8 @@ static int calculate_viterbi_matrix(
     int bigram_i, inp_phoneme_i, trg_phoneme_i;
     int t_count, t = 0, w, s, S, i, v, v_max;
     float tmp_val1, tmp_val2, tmp_d, bigram_probability;
-    float max_cost, min_cost, cost_threshold;
     int *predecessors = malloc(sizeof(int) * data.words_number);
+    THistogram histogram_for_pruning[HISTOGRAM_SIZE];
     //double start_time, end_time; // for debug
 
     t = 0; s = 1;
@@ -404,56 +521,22 @@ static int calculate_viterbi_matrix(
             }
         }
         //end_time = omp_get_wtime(); // for debug
-        //printf("%.3f\t", end_time - start_time); // for debug
+        //printf("%.4f\t", end_time - start_time); // for debug
 
-        if (pruning_coeff > 0.0)
-        {
-            w = 0; s = 1;
-            max_cost = data.cells[t][w][s].cost;
-            min_cost = data.cells[t][w][s].cost;
-            for (w = 0; w < data.words_number; w++)
-            {
-                for (s = 1; s <= data.words_sizes[w]; s++)
-                {
-                    if (data.cells[t][w][s].cost <= (-FLT_MAX + FLT_EPSILON))
-                    {
-                        continue;
-                    }
-                    if (data.cells[t][w][s].cost > max_cost)
-                    {
-                        max_cost = data.cells[t][w][s].cost;
-                    }
-                    if (data.cells[t][w][s].cost < min_cost)
-                    {
-                        min_cost = data.cells[t][w][s].cost;
-                    }
-                }
-            }
-            if ((max_cost <= (-FLT_MAX + FLT_EPSILON))
-                    || (min_cost <= (-FLT_MAX + FLT_EPSILON)))
-            {
-                is_ok = 0;
-                break;
-            }
-            cost_threshold = min_cost + (max_cost - min_cost) * pruning_coeff;
-            for (w = 0; w < data.words_number; w++)
-            {
-                for (s = 1; s <= data.words_sizes[w]; s++)
-                {
-                    if (data.cells[t][w][s].cost < cost_threshold)
-                    {
-                        data.cells[t][w][s].cost = -FLT_MAX;
-                        data.cells[t][w][s].btp = -1;
-                    }
-                }
-            }
-        }
+        //start_time = omp_get_wtime(); // for debug
+        prune_hypotheses(data, t, pruning_coeff, histogram_for_pruning);
+        //end_time = omp_get_wtime(); // for debug
+        //printf("%.4f\t", end_time - start_time); // for debug
 
         //start_time = omp_get_wtime(); // for debug
         #pragma omp parallel for private(v,v_max,S,bigram_i,\
                                          bigram_probability,tmp_val1,tmp_val2)
         for (w = 0; w < data.words_number; w++)
         {
+            if (data.cells[t][w][s].cost <= (-FLT_MAX + FLT_EPSILON))
+            {
+                continue;
+            }
             bigram_i = 0;
             v_max = 0;
             S = data.words_sizes[v_max];
@@ -509,7 +592,7 @@ static int calculate_viterbi_matrix(
             predecessors[w] = v_max;
         }
         //end_time = omp_get_wtime(); // for debug
-        //printf("%.3f\n", end_time - start_time); // for debug
+        //printf("%.4f\n", end_time - start_time); // for debug
 
         v_max = 0;
         for (v = 1; v < data.words_number; v++)
