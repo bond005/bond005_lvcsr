@@ -672,7 +672,7 @@ static int create_phonemes_sequence_by_transcription(
 {
     int is_ok = 1;
     int start_ind = -1, end_ind = -1, i, j, k;
-    int number_of_steps_20ms, phonemes_sequence_length = 0;
+    int number_of_steps_10ms, phonemes_sequence_length = 0;
     float cur_phoneme_weight;
 
     for (i = 0; i < transcription_length; i++)
@@ -716,14 +716,21 @@ static int create_phonemes_sequence_by_transcription(
 
     for (i = start_ind; i <= end_ind; i++)
     {
-        number_of_steps_20ms = (int)floor((transcription[i].end_time
+        number_of_steps_10ms = (int)floor((transcription[i].end_time
                                            - transcription[i].start_time)
                                           / INTERVAL_10MSECS + 0.5);
-        if (number_of_steps_20ms > MAX_REPEATS_OF_PHONEME)
+        if (number_of_steps_10ms > MAX_REPEATS_OF_PHONEME)
         {
-            number_of_steps_20ms = MAX_REPEATS_OF_PHONEME;
+            number_of_steps_10ms = MAX_REPEATS_OF_PHONEME;
         }
-        phonemes_sequence_length += number_of_steps_20ms;
+        else
+        {
+            if (number_of_steps_10ms < 1)
+            {
+                number_of_steps_10ms = 1;
+            }
+        }
+        phonemes_sequence_length += number_of_steps_10ms;
     }
     if (phonemes_sequence == NULL)
     {
@@ -733,23 +740,27 @@ static int create_phonemes_sequence_by_transcription(
     j = 0;
     for (i = start_ind; i <= end_ind; i++)
     {
-        number_of_steps_20ms = (int)floor((transcription[i].end_time
+        number_of_steps_10ms = (int)floor((transcription[i].end_time
                                            - transcription[i].start_time)
                                           / INTERVAL_10MSECS + 0.5);
-        if (number_of_steps_20ms > MAX_REPEATS_OF_PHONEME)
+        if (number_of_steps_10ms > MAX_REPEATS_OF_PHONEME)
         {
-            number_of_steps_20ms = MAX_REPEATS_OF_PHONEME;
+            number_of_steps_10ms = MAX_REPEATS_OF_PHONEME;
         }
-        if (number_of_steps_20ms > 0)
+        else
         {
-            cur_phoneme_weight = log10(transcription[i].probability);
-            for (k = 0; k < number_of_steps_20ms; k++)
+            if (number_of_steps_10ms < 1)
             {
-                phonemes_sequence[j+k] = transcription[i].node_data;
-                phonemes_weights[j+k] = cur_phoneme_weight;
+                number_of_steps_10ms = 1;
             }
-            j += number_of_steps_20ms;
         }
+        cur_phoneme_weight = log10(transcription[i].probability);
+        for (k = 0; k < number_of_steps_10ms; k++)
+        {
+            phonemes_sequence[j+k] = transcription[i].node_data;
+            phonemes_weights[j+k] = cur_phoneme_weight;
+        }
+        j += number_of_steps_10ms;
     }
 
     return phonemes_sequence_length;
